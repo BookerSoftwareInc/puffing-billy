@@ -20,13 +20,13 @@ module Billy
       # Process the handlers by order of importance
       [:stubs, :cache, :proxy].each do |key|
         if (response = handlers[key].handle_request(method, url, headers, body))
-          @request_log.complete(request, key)
+          @request_log.complete(request, key, response)
           return response
         end
       end
 
       body_msg = Billy.config.cache_request_body_methods.include?(method) ? " with body '#{body}'" : ''
-      request_log.complete(request, :error)
+      request_log.complete(request, :error, { error: "ERROR"} )
       { error: "Connection to #{url}#{body_msg} not cached and new http connections are disabled" }
     rescue => error
       { error: error.message }
