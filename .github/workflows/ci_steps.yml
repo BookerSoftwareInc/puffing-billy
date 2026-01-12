@@ -26,6 +26,11 @@ jobs:
       - name: Install Bundler v1
         run: gem install bundler -v '< 2'
 
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential qt5-qmake qtbase5-dev libqt5webkit5-dev g++ xvfb
+
       - name: Install PhantomJS
         run: |
           export PHANTOMJS_VERSION='2.1.1'
