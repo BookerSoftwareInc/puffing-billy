@@ -8,6 +8,8 @@ jobs:
   rspec:
     name: "rspec (Ruby ${{ matrix.ruby-version }})"
     runs-on: ubuntu-22.04
+    env:
+      FFI_VERSION: 1.15.5
     strategy:
       fail-fast: false
       matrix:
@@ -25,6 +27,11 @@ jobs:
 
       - name: Install Bundler v1
         run: gem install bundler -v 1.17.3
+
+      - name: Pin ffi for Ruby 2.x and force ruby platform
+        run: |
+          gem install ffi -v "$FFI_VERSION"
+          bundle _1.17.3_ config set force_ruby_platform true
 
       - name: Install system dependencies
         run: |
