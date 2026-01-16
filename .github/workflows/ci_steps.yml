@@ -8,8 +8,6 @@ jobs:
   rspec:
     name: "rspec (Ruby ${{ matrix.ruby-version }})"
     runs-on: ubuntu-22.04
-    env:
-      FFI_VERSION: 1.15.5
     strategy:
       fail-fast: false
       matrix:
@@ -30,8 +28,9 @@ jobs:
 
       - name: Pin ffi for Ruby 2.x and force ruby platform
         run: |
-          gem install ffi -v "$FFI_VERSION"
           bundle _1.17.3_ config set force_ruby_platform true
+          cp Gemfile Gemfile.ci
+          echo "gem 'ffi', '~> 1.15'" >> Gemfile.ci
 
       - name: Install system dependencies
         run: |
@@ -48,7 +47,7 @@ jobs:
           phantomjs --version
 
       - name: Install gems
-        run: bundle _1.17.3_ install
+        run: BUNDLE_GEMFILE=Gemfile.ci bundle _1.17.3_ install
 
       - name: rspec
-        run: bundle _1.17.3_ exec rspec spec
+        run: BUNDLE_GEMFILE=Gemfile.ci bundle _1.17.3_ exec rspec spec
