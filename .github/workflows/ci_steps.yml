@@ -7,7 +7,7 @@ on:
 jobs:
   rspec:
     name: "rspec (Ruby ${{ matrix.ruby-version }})"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -16,6 +16,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: false
+
+      - name: Install Bundler v1
+        run: gem install bundler -v '< 2'
+
+      - name: Use Ruby 2.x compatible ffi (CI-only)
+        run: |
+          bundle config set force_ruby_platform true
+          cp Gemfile Gemfile.ci
+          echo "gem 'ffi', '~> 1.15'" >> Gemfile.ci
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential qt5-qmake qtbase5-dev libqt5webkit5-dev g++ xvfb
 
       - name: Install PhantomJS
         run: |
@@ -26,12 +46,8 @@ jobs:
           sudo mv phantomjs /usr/local/bin/phantomjs
           phantomjs --version
 
-      - name: Install Ruby and gems
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true
-          bundler: '< 2'
+      - name: Install gems
+        run: BUNDLE_GEMFILE=Gemfile.ci bundle install
 
       - name: rspec
-        run: bundle exec rspec spec
+        run: BUNDLE_GEMFILE=Gemfile.ci xvfb-run -a bundle exec rspec spec --format documentation
