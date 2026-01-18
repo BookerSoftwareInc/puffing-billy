@@ -12,6 +12,7 @@ describe Billy::CacheHandler do
       body:     'Some body'
     }
   end
+  let(:cache_scope) { 0 }
 
   it 'delegates #reset to the cache' do
     expect(Billy::Cache.instance).to receive(:reset).at_least(:once)
@@ -26,12 +27,12 @@ describe Billy::CacheHandler do
   describe '#handles_request?' do
     it 'handles the request if it is cached' do
       expect(Billy::Cache.instance).to receive(:cached?).and_return(true)
-      expect(handler.handles_request?(nil, nil, nil, nil)).to be true
+      expect(handler.handles_request?(nil, nil, nil, nil, cache_scope)).to be true
     end
 
     it 'does not handle the request if it is not cached' do
       expect(Billy::Cache.instance).to receive(:cached?).and_return(false)
-      expect(handler.handles_request?(nil, nil, nil, nil)).to be false
+      expect(handler.handles_request?(nil, nil, nil, nil, cache_scope)).to be false
     end
   end
 
@@ -41,7 +42,8 @@ describe Billy::CacheHandler do
       expect(handler.handle_request(request[:method],
                                     request[:url],
                                     request[:headers],
-                                    request[:body])).to be nil
+                                    request[:body],
+                                    cache_scope)).to be nil
     end
 
     it 'returns a cached response if the request can be handled' do
@@ -50,7 +52,8 @@ describe Billy::CacheHandler do
       expect(handler.handle_request(request[:method],
                                     request[:url],
                                     request[:headers],
-                                    request[:body])).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'The response body')
+                                    request[:body],
+                                    cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'The response body')
     end
 
     context 'updating jsonp callback names enabled' do
@@ -64,7 +67,8 @@ describe Billy::CacheHandler do
         expect(handler.handle_request(request[:method],
                                       request[:url],
                                       request[:headers],
-                                      request[:body])).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'dynamicCallback5678({"yolo":"kitten"})')
+                                      request[:body],
+                                      cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'dynamicCallback5678({"yolo":"kitten"})')
       end
 
       it 'is flexible about the format of the response body' do
@@ -73,7 +77,8 @@ describe Billy::CacheHandler do
         expect(handler.handle_request(request[:method],
                                       request[:url],
                                       request[:headers],
-                                      request[:body])).to eql(status: 200, headers: { 'Connection' => 'close' }, content: "/**/ dynamicCallback5678(\n{\"yolo\":\"kitten\"})")
+                                      request[:body],
+                                      cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close' }, content: "/**/ dynamicCallback5678(\n{\"yolo\":\"kitten\"})")
       end
 
       it 'does not interfere with non-jsonp requests' do
@@ -86,17 +91,18 @@ describe Billy::CacheHandler do
         }
 
         allow(Billy::Cache.instance).to receive(:cached?).and_return(true)
-        allow(Billy::Cache.instance).to receive(:fetch).with(jsonp_request[:method], jsonp_request[:url], jsonp_request[:body]).and_return(status: 200,
+        allow(Billy::Cache.instance).to receive(:fetch).with(jsonp_request[:method], jsonp_request[:url], jsonp_request[:body], cache_scope).and_return(status: 200,
                                                                                                                                            headers: { 'Connection' => 'close' },
                                                                                                                                            content: 'dynamicCallback1234({"yolo":"kitten"})')
-        allow(Billy::Cache.instance).to receive(:fetch).with(other_request[:method], other_request[:url], other_request[:body]).and_return(status: 200,
+        allow(Billy::Cache.instance).to receive(:fetch).with(other_request[:method], other_request[:url], other_request[:body], cache_scope).and_return(status: 200,
                                                                                                                                            headers: { 'Connection' => 'close' },
                                                                                                                                            content: 'no jsonp but has parentheses()')
 
         expect(handler.handle_request(other_request[:method],
                                       other_request[:url],
                                       other_request[:headers],
-                                      other_request[:body])).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'no jsonp but has parentheses()')
+                                      other_request[:body],
+                                      cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'no jsonp but has parentheses()')
       end
 
       context 'when after_cache_handles_request is set' do
@@ -112,7 +118,8 @@ describe Billy::CacheHandler do
           expect(handler.handle_request(request[:method],
                                         request[:url],
                                         request[:headers],
-                                        request[:body])).to eql(status: 200, headers: { 'Connection' => 'close', 'Access-Control-Allow-Origin' => "*" }, content: 'Some body')
+                                        request[:body],
+                                        cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close', 'Access-Control-Allow-Origin' => "*" }, content: 'Some body')
         end
       end
 
@@ -132,7 +139,8 @@ describe Billy::CacheHandler do
           expect(handler.handle_request(request[:method],
                                         request[:url],
                                         request[:headers],
-                                        request[:body])).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'dynamicCallback5678({"yolo":"kitten"})')
+                                        request[:body],
+                                        cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'dynamicCallback5678({"yolo":"kitten"})')
         end
       end
     end
@@ -148,7 +156,8 @@ describe Billy::CacheHandler do
         expect(handler.handle_request(request[:method],
                                       request[:url],
                                       request[:headers],
-                                      request[:body])).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'dynamicCallback1234({"yolo":"kitten"})')
+                                      request[:body],
+                                      cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'dynamicCallback1234({"yolo":"kitten"})')
       end
     end
 
@@ -158,7 +167,8 @@ describe Billy::CacheHandler do
       expect(handler.handle_request(request[:method],
                                     request[:url],
                                     request[:headers],
-                                    request[:body])).to be nil
+                                    request[:body],
+                                    cache_scope)).to be nil
     end
 
     context 'network delay simulation' do
@@ -170,7 +180,7 @@ describe Billy::CacheHandler do
       context 'when cache_simulates_network_delays is disabled' do
         it 'does not sleep for default delay before responding' do
           expect(Kernel).not_to receive(:sleep)
-          handler.handle_request(request[:method], request[:url], request[:headers], request[:body])
+          handler.handle_request(request[:method], request[:url], request[:headers], request[:body], cache_scope)
         end
       end
 
@@ -183,7 +193,7 @@ describe Billy::CacheHandler do
 
         it 'sleeps for default delay before responding' do
           expect(Kernel).to receive(:sleep).with(Billy.config.cache_simulates_network_delay_time)
-          handler.handle_request(request[:method], request[:url], request[:headers], request[:body])
+          handler.handle_request(request[:method], request[:url], request[:headers], request[:body], cache_scope)
         end
       end
     end

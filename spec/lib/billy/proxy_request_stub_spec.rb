@@ -184,6 +184,11 @@ describe Billy::ProxyRequestStub do
     end
 
     it 'should use a callable with Billy.pass_request' do
+      allow(Billy.proxy.request_handler.handlers[:proxy]).to receive(:handle_request).and_return(
+        status: 200,
+        headers: {},
+        content: 'original'
+      )
       # Add the missing em-synchrony call which is done by
       # ProxyConnection#handle_request instead.
       EM.synchrony do

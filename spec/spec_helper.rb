@@ -7,6 +7,18 @@ require 'rack'
 require 'logger'
 require 'fileutils'
 
+module Billy
+  class RequestLog
+    def complete(request, handler, cache_key = nil)
+      return unless Billy.config.record_requests
+
+      request.merge! status: :complete,
+                     handler: handler,
+                     cache_key: cache_key
+    end
+  end
+end
+
 browser = Billy::Browsers::Watir.new :phantomjs
 Capybara.app = Rack::Directory.new(File.expand_path('../../examples', __FILE__))
 Capybara.server = :webrick
