@@ -8,6 +8,11 @@ jobs:
   rspec:
     name: "rspec (Ruby ${{ matrix.ruby-version }})"
     runs-on: ubuntu-latest
+    env:
+      # ubuntu-latest uses OpenSSL 3; PhantomJS 2.1.1 can trip over provider-loading config.
+      # Disable OpenSSL config/module loading for the CI process.
+      OPENSSL_CONF: /dev/null
+      OPENSSL_MODULES: ""
     strategy:
       fail-fast: false
       matrix:
