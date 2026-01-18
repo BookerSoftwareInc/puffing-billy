@@ -40,8 +40,23 @@ jobs:
             libfontconfig1 libfreetype6 libxrender1 libxext6 libx11-6 libxss1 libxtst6 libxcb1 libxcb-glx0 \
             || sudo apt-get -f install -y
           if ! dpkg -s libssl1.1 >/dev/null 2>&1; then
-            wget -q http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.1/libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb
-            sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2.22_amd64.deb || sudo apt-get -f install -y
+            # PhantomJS 2.1.1 is linked against OpenSSL 1.1, which is not present on ubuntu-latest.
+            # Download a focal libssl1.1 .deb from Ubuntu security mirrors (version varies over time).
+            LIBSSL_DEB="libssl1.1.deb"
+            rm -f "$LIBSSL_DEB"
+            for v in \
+              1.1.1f-1ubuntu2.24 \
+              1.1.1f-1ubuntu2.23 \
+              1.1.1f-1ubuntu2.22 \
+              1.1.1f-1ubuntu2.21; do
+              url="https://security.ubuntu.com/ubuntu/pool/main/o/openssl1.1/libssl1.1_${v}_amd64.deb"
+              echo "Trying $url"
+              if wget -nv -O "$LIBSSL_DEB" "$url"; then
+                break
+              fi
+            done
+            test -s "$LIBSSL_DEB"
+            sudo dpkg -i "$LIBSSL_DEB" || sudo apt-get -f install -y
           fi
 
       - name: Install PhantomJS
