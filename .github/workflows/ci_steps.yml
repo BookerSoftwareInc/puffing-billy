@@ -36,45 +36,18 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            build-essential qt5-qmake qtbase5-dev libqt5webkit5-dev g++ xvfb openssl \
-            libfontconfig1 libfreetype6 libxrender1 libxext6 libx11-6 libxss1 libxtst6 libxcb1 libxcb-glx0 \
-            || sudo apt-get -f install -y
-          if ! dpkg -s libssl1.1 >/dev/null 2>&1; then
-            # PhantomJS 2.1.1 is linked against OpenSSL 1.1, which is not present on ubuntu-latest.
-            # Download a focal libssl1.1 .deb from Ubuntu archives (version varies over time).
-            LIBSSL_DEB="libssl1.1.deb"
-            rm -f "$LIBSSL_DEB"
-            for base in \
-              "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.1" \
-              "http://old-releases.ubuntu.com/ubuntu/pool/main/o/openssl1.1"; do
-              for v in \
-                1.1.1f-1ubuntu2.23 \
-                1.1.1f-1ubuntu2.22 \
-                1.1.1f-1ubuntu2.21 \
-                1.1.1f-1ubuntu2.20 \
-                1.1.1f-1ubuntu2.19 \
-                1.1.1f-1ubuntu2.16; do
-                url="${base}/libssl1.1_${v}_amd64.deb"
-                echo "Trying $url"
-                if wget -nv -O "$LIBSSL_DEB" "$url"; then
-                  break 2
-                fi
-              done
-            done
-            test -s "$LIBSSL_DEB"
-            sudo dpkg -i "$LIBSSL_DEB" || sudo apt-get -f install -y
-          fi
+            bzip2 curl \
+            build-essential g++ xvfb \
+            libssl-dev \
+            qt5-qmake qtbase5-dev libqt5webkit5-dev
 
       - name: Install PhantomJS
-        env:
-          OPENSSL_CONF: /etc/ssl/openssl.cnf
-          OPENSSL_MODULES: /usr/lib/x86_64-linux-gnu/ossl-modules
         run: |
-          export PHANTOMJS_VERSION='2.1.1'
-          export PHANTOMJS_URL="https://github.com/Medium/phantomjs/releases/download/v${PHANTOMJS_VERSION}/phantomjs-${PHANTOMJS_VERSION}-linux-x86_64.tar.bz2"
-          wget -q ${PHANTOMJS_URL}
-          tar xfj phantomjs-${PHANTOMJS_VERSION}-linux-x86_64.tar.bz2 --wildcards */bin/phantomjs --strip-components=2
-          sudo mv phantomjs /usr/local/bin/phantomjs
+          sudo mkdir -p /tmp/phantomjs
+          curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 \
+            | sudo tar -xj --strip-components=1 -C /tmp/phantomjs
+          sudo mv /tmp/phantomjs/bin/phantomjs /usr/local/bin/phantomjs
+          sudo rm -rf /tmp/phantomjs
           phantomjs --version
 
       - name: Install gems
