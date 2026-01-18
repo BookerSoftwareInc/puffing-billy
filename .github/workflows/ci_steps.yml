@@ -39,8 +39,8 @@ jobs:
 
       - name: Install PhantomJS
         env:
-          OPENSSL_CONF: /etc/ssl/openssl.cnf
-          OPENSSL_MODULES: /usr/lib/x86_64-linux-gnu/ossl-modules
+          OPENSSL_CONF: /dev/null
+          OPENSSL_MODULES: ""
         run: |
           export PHANTOMJS_VERSION='2.1.1'
           export PHANTOMJS_URL="https://github.com/Medium/phantomjs/releases/download/v${PHANTOMJS_VERSION}/phantomjs-${PHANTOMJS_VERSION}-linux-x86_64.tar.bz2"
