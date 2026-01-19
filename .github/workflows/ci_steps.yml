@@ -41,7 +41,11 @@ jobs:
           apt-get install -y --no-install-recommends ca-certificates git curl bzip2 unzip
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        run: |
+          git init
+          git remote add origin https://github.com/${{ github.repository }}.git
+          git fetch --depth 1 origin ${{ github.sha }}
+          git checkout FETCH_HEAD
 
       - name: Install Bundler v1 (Travis parity)
         run: gem install bundler -v '< 2'
