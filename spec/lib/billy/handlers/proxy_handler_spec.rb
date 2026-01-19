@@ -164,11 +164,13 @@ describe Billy::ProxyHandler do
       end
 
       it 'returns a hashed response if the request succeeds' do
-        expect(subject.handle_request(request[:method],
-                                      request[:url],
-                                      request[:headers],
-                                      request[:body],
-                                      cache_scope)).to eql(status: 200, headers: { 'Connection' => 'close' }, content: 'The response body')
+        result = subject.handle_request(request[:method],
+                                        request[:url],
+                                        request[:headers],
+                                        request[:body],
+                                        cache_scope)
+        expect(result).to include(status: 200, headers: { 'Connection' => 'close' }, content: 'The response body')
+        expect(result).to have_key(:cache_key)
       end
 
       it 'returns nil if both the error and response are for some reason nil' do
@@ -181,7 +183,11 @@ describe Billy::ProxyHandler do
       end
 
       it 'caches the response if cacheable' do
-        expect(subject).to receive(:allowed_response_code?).and_return(true)
+        # cacheable? requires Billy.config.cache and refresh_persisted_cache to be true
+        allow(Billy.config).to receive(:cache).and_return(true)
+        allow(Billy.config).to receive(:refresh_persisted_cache).and_return(true)
+        allow(Billy.config).to receive(:whitelist).and_return([])
+        allow(Billy.config).to receive(:path_blacklist).and_return(['/index'])
         expect(Billy::Cache.instance).to receive(:store)
         subject.handle_request(request[:method],
                                request[:url],
