@@ -1,8 +1,9 @@
 name: CI
 
 on:
-  push:
-  pull_request:
+  # Disabled until spec changes are manually pushed
+  # push:
+  # pull_request:
   workflow_dispatch:
 
 jobs:
