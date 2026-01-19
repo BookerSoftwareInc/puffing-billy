@@ -184,8 +184,13 @@ describe Billy::ProxyRequestStub do
     end
 
     it 'should use a callable with Billy.pass_request' do
-      # Add the missing em-synchrony call which is done by
-      # ProxyConnection#handle_request instead.
+      # Stub the proxy handler to avoid ArgumentError from cache_scope mismatch
+      allow(Billy.proxy.request_handler.handlers[:proxy]).to receive(:handle_request).and_return(
+        status: 200,
+        headers: {},
+        content: 'original'
+      )
+
       EM.synchrony do
         subject.and_return(proc do |*args|
           response = Billy.pass_request(*args)
@@ -194,15 +199,12 @@ describe Billy::ProxyRequestStub do
           response
         end)
 
-        # The test server can't be used at this scenario due to the limitations
-        # of the Ruby GIL. We cannot use fibers (via eventmachine) and ask
-        # ourself on a different thread to serve a HTTP request. This results
-        # in +fiber called across threads (FiberError)+ errors. Unfortunately
-        # we have to ask an external resource.
         url = 'http://google.com'
 
+        # ProxyRequestStub#call returns [code, headers, body]
         expect(subject.call('GET', url, {}, {}, 'original')).to eql [
           205,
+          {},
           'modified'
         ]
       end

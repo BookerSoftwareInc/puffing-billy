@@ -11,23 +11,24 @@ describe Billy::StubHandler do
       body:     'Some body'
     }
   end
+  let(:cache_scope) { 0 }
 
   describe '#handles_request?' do
     it 'handles the request if it is stubbed' do
       expect(handler).to receive(:find_stub).and_return('a stub')
-      expect(handler.handles_request?(nil, nil, nil, nil)).to be true
+      expect(handler.handles_request?(nil, nil, nil, nil, cache_scope)).to be true
     end
 
     it 'does not handle the request if it is not stubbed' do
       expect(handler).to receive(:find_stub).and_return(nil)
-      expect(handler.handles_request?(nil, nil, nil, nil)).to be false
+      expect(handler.handles_request?(nil, nil, nil, nil, cache_scope)).to be false
     end
   end
 
   describe '#handle_request' do
     it 'returns nil if the request is not stubbed' do
       expect(handler).to receive(:handles_request?).and_return(false)
-      expect(handler.handle_request(nil, nil, nil, nil)).to be nil
+      expect(handler.handle_request(nil, nil, nil, nil, cache_scope)).to be nil
     end
 
     it 'returns a response hash if the request is stubbed' do
@@ -37,9 +38,10 @@ describe Billy::StubHandler do
       expect(handler.handle_request('GET',
                                     request[:url],
                                     request[:headers],
-                                    request[:body])).to eql(status: 200,
-                                                            headers: { 'Content-Type' => 'application/json' },
-                                                            content: 'Some content')
+                                    request[:body],
+                                    cache_scope)).to eql(status: 200,
+                                                         headers: { 'Content-Type' => 'application/json' },
+                                                         content: 'Some content')
     end
   end
 
@@ -53,13 +55,15 @@ describe Billy::StubHandler do
       expect(handler.handles_request?('GET',
                                       request[:url],
                                       request[:headers],
-                                      request[:body])).to be true
+                                      request[:body],
+                                      cache_scope)).to be true
       handler.reset
       expect(handler.stubs).to be_empty
       expect(handler.handles_request?('GET',
                                       request[:url],
                                       request[:headers],
-                                      request[:body])).to be false
+                                      request[:body],
+                                      cache_scope)).to be false
     end
   end
 
@@ -71,22 +75,26 @@ describe Billy::StubHandler do
       expect(handler.handles_request?('GET',
                                       'http://example.get/',
                                       request[:headers],
-                                      request[:body])).to be true
+                                      request[:body],
+                                      cache_scope)).to be true
       expect(handler.handles_request?('POST',
                                       'http://example.post/',
                                       request[:headers],
-                                      request[:body])).to be true
+                                      request[:body],
+                                      cache_scope)).to be true
 
       handler.unstub get_stub
 
       expect(handler.handles_request?('GET',
                                       'http://example.get/',
                                       request[:headers],
-                                      request[:body])).to be false
+                                      request[:body],
+                                      cache_scope)).to be false
       expect(handler.handles_request?('POST',
                                       'http://example.post/',
                                       request[:headers],
-                                      request[:body])).to be true
+                                      request[:body],
+                                      cache_scope)).to be true
     end
 
     it 'does not raise errors for not existing stub' do
@@ -99,7 +107,8 @@ describe Billy::StubHandler do
     expect(handler.handles_request?('GET',
                                     request[:url],
                                     request[:headers],
-                                    request[:body])).to be true
+                                    request[:body],
+                                    cache_scope)).to be true
   end
 
   describe '#stubs' do

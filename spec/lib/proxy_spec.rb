@@ -160,7 +160,7 @@ shared_examples_for 'a cache' do
 
   context 'cache persistence' do
     let(:cache_path) { Billy.config.cache_path }
-    let(:cached_key) { proxy.cache.key('get', "#{url}/foo", '') }
+    let(:cached_key) { proxy.cache.key('get', "#{url}/foo", '', 0) }
     let(:cached_file) do
       f = cached_key + '.yml'
       File.join(cache_path, f)
@@ -397,7 +397,7 @@ describe Billy::Proxy do
       end
 
       it 'should have different keys for the same request under a different scope' do
-        args = ['get', "#{url}/foo", '']
+        args = ['get', "#{url}/foo", '', 0]
         key = proxy.cache.key(*args)
         proxy.cache.with_scope 'another_cache' do
           expect(proxy.cache.key(*args)).to_not eq key

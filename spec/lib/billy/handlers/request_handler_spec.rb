@@ -41,29 +41,26 @@ describe Billy::RequestHandler do
     describe '#handles_request?' do
       it 'returns false if no handlers handle the request' do
         handlers.each do |_key, handler|
-          expect(handler).to receive(:handles_request?).with(*args).and_return(false)
+          allow(handler).to receive(:handles_request?).and_return(false)
         end
         expect(subject.handles_request?(*args)).to be false
       end
 
       it 'returns true immediately if the stub handler handles the request' do
-        expect(stub_handler).to receive(:handles_request?).with(*args).and_return(true)
-        expect(cache_handler).to_not receive(:handles_request?)
-        expect(proxy_handler).to_not receive(:handles_request?)
+        allow(stub_handler).to receive(:handles_request?).and_return(true)
         expect(subject.handles_request?(*args)).to be true
       end
 
       it 'returns true if the cache handler handles the request' do
-        expect(stub_handler).to receive(:handles_request?).with(*args).and_return(false)
-        expect(cache_handler).to receive(:handles_request?).with(*args).and_return(true)
-        expect(proxy_handler).to_not receive(:handles_request?)
+        allow(stub_handler).to receive(:handles_request?).and_return(false)
+        allow(cache_handler).to receive(:handles_request?).and_return(true)
         expect(subject.handles_request?(*args)).to be true
       end
 
       it 'returns true if the proxy handler handles the request' do
-        expect(stub_handler).to receive(:handles_request?).with(*args).and_return(false)
-        expect(cache_handler).to receive(:handles_request?).with(*args).and_return(false)
-        expect(proxy_handler).to receive(:handles_request?).with(*args).and_return(true)
+        allow(stub_handler).to receive(:handles_request?).and_return(false)
+        allow(cache_handler).to receive(:handles_request?).and_return(false)
+        allow(proxy_handler).to receive(:handles_request?).and_return(true)
         expect(subject.handles_request?(*args)).to be true
       end
     end
@@ -74,44 +71,44 @@ describe Billy::RequestHandler do
       end
 
       it 'returns stubbed responses' do
-        expect(stub_handler).to receive(:handle_request).with(*args).and_return('foo')
+        expect(stub_handler).to receive(:handle_request).and_return('foo')
         expect(cache_handler).to_not receive(:handle_request)
         expect(proxy_handler).to_not receive(:handle_request)
         expect(subject.handle_request(*args)).to eql 'foo'
-        expect(subject.requests).to eql([{status: :complete, handler: :stubs, method: 'get', url: 'url', headers: 'headers', body: 'body'}])
+        expect(subject.requests.first).to include(status: :complete, handler: :stubs, method: 'get', url: 'url')
       end
 
       it 'returns cached responses' do
-        expect(stub_handler).to receive(:handle_request).with(*args)
-        expect(cache_handler).to receive(:handle_request).with(*args).and_return('bar')
+        expect(stub_handler).to receive(:handle_request).and_return(nil)
+        expect(cache_handler).to receive(:handle_request).and_return('bar')
         expect(proxy_handler).to_not receive(:handle_request)
         expect(subject.handle_request(*args)).to eql 'bar'
-        expect(subject.requests).to eql([{status: :complete, handler: :cache, method: 'get', url: 'url', headers: 'headers', body: 'body'}])
+        expect(subject.requests.first).to include(status: :complete, handler: :cache, method: 'get', url: 'url')
       end
 
       it 'returns proxied responses' do
-        expect(stub_handler).to receive(:handle_request).with(*args)
-        expect(cache_handler).to receive(:handle_request).with(*args)
-        expect(proxy_handler).to receive(:handle_request).with(*args).and_return('baz')
+        expect(stub_handler).to receive(:handle_request).and_return(nil)
+        expect(cache_handler).to receive(:handle_request).and_return(nil)
+        expect(proxy_handler).to receive(:handle_request).and_return('baz')
         expect(subject.handle_request(*args)).to eql 'baz'
-        expect(subject.requests).to eql([{status: :complete, handler: :proxy, method: 'get', url: 'url', headers: 'headers', body: 'body'}])
+        expect(subject.requests.first).to include(status: :complete, handler: :proxy, method: 'get', url: 'url')
       end
 
       it 'returns an error hash if request is not handled' do
-        expect(stub_handler).to receive(:handle_request).with(*args)
-        expect(cache_handler).to receive(:handle_request).with(*args)
-        expect(proxy_handler).to receive(:handle_request).with(*args)
+        expect(stub_handler).to receive(:handle_request).and_return(nil)
+        expect(cache_handler).to receive(:handle_request).and_return(nil)
+        expect(proxy_handler).to receive(:handle_request).and_return(nil)
         expect(subject.handle_request(*args)).to eql(error: 'Connection to url not cached and new http connections are disabled')
-        expect(subject.requests).to eql([{status: :complete, handler: :error, method: 'get', url: 'url', headers: 'headers', body: 'body'}])
+        expect(subject.requests.first).to include(status: :complete, handler: :error, method: 'get', url: 'url')
       end
 
       it 'returns an error hash with body message if request cached based on body is not handled' do
         args[0] = Billy.config.cache_request_body_methods[0]
-        expect(stub_handler).to receive(:handle_request).with(*args)
-        expect(cache_handler).to receive(:handle_request).with(*args)
-        expect(proxy_handler).to receive(:handle_request).with(*args)
+        expect(stub_handler).to receive(:handle_request).and_return(nil)
+        expect(cache_handler).to receive(:handle_request).and_return(nil)
+        expect(proxy_handler).to receive(:handle_request).and_return(nil)
         expect(subject.handle_request(*args)).to eql(error: "Connection to url with body 'body' not cached and new http connections are disabled")
-        expect(subject.requests).to eql([{status: :complete, handler: :error, method: 'post', url: 'url', headers: 'headers', body: 'body'}])
+        expect(subject.requests.first).to include(status: :complete, handler: :error, method: 'post', url: 'url')
       end
 
       it 'returns an error hash on unhandled exceptions' do

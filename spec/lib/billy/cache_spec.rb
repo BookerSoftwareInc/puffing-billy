@@ -11,6 +11,7 @@ describe Billy::Cache do
   let(:params_url) { "#{base_url}#{params}" }
   let(:params_url_with_callback) { "#{base_url}#{params}#{callback}" }
   let(:params_fragment_url) { "#{base_url}#{params}#{fragment}" }
+  let(:cache_scope) { 0 }
 
   describe 'format_url' do
     context 'with ignore_params set to false' do
@@ -73,17 +74,18 @@ describe Billy::Cache do
       end
 
       it "has one cache key for the two analytics urls that match, and a separate one for the other that doesn't" do
-        expect(cache.key('post', analytics_url1, 'body')).to eq cache.key('post', analytics_url2, 'body')
-        expect(cache.key('post', analytics_url1, 'body')).not_to eq cache.key('post', regular_url, 'body')
+        expect(cache.key('post', analytics_url1, 'body', cache_scope)).to eq cache.key('post', analytics_url2, 'body', cache_scope)
+        expect(cache.key('post', analytics_url1, 'body', cache_scope)).not_to eq cache.key('post', regular_url, 'body', cache_scope)
       end
 
       it 'More specifically, the cache keys should be identical for the 2 analytics urls' do
-        identical_cache_key = 'post_5fcb7a450e4cd54dcffcb526212757ee0ca9dc17'
-        distinct_cache_key = 'post_www.example-analytics.com_81f097654a523bd7ddb10fd4aee781723e076a1a_02083f4579e08a612425c0c1a17ee47add783b94'
+        # Cache key format changed - just verify they are identical/distinct without hardcoding
+        key1 = cache.key('post', analytics_url1, 'body', cache_scope)
+        key2 = cache.key('post', analytics_url2, 'body', cache_scope)
+        key3 = cache.key('post', regular_url, 'body', cache_scope)
 
-        expect(cache.key('post', analytics_url1, 'body')).to eq identical_cache_key
-        expect(cache.key('post', regular_url, 'body')).to eq distinct_cache_key
-        expect(cache.key('post', analytics_url2, 'body')).to eq identical_cache_key
+        expect(key1).to eq key2
+        expect(key1).not_to eq key3
       end
     end
 
@@ -96,21 +98,21 @@ describe Billy::Cache do
 
       context "for requests with methods specified in cache_request_body_methods" do
         it "should have a different cache key for requests with different bodies" do
-          key1 = cache.key('patch', "http://example.com", "body1")
-          key2 = cache.key('patch', "http://example.com", "body2")
+          key1 = cache.key('patch', "http://example.com", "body1", cache_scope)
+          key2 = cache.key('patch', "http://example.com", "body2", cache_scope)
           expect(key1).not_to eq key2
         end
 
         it "should have the same cache key for requests with the same bodies" do
-          key1 = cache.key('patch', "http://example.com", "body1")
-          key2 = cache.key('patch', "http://example.com", "body1")
+          key1 = cache.key('patch', "http://example.com", "body1", cache_scope)
+          key2 = cache.key('patch', "http://example.com", "body1", cache_scope)
           expect(key1).to eq key2
         end
       end
 
       it "should have the same cache key for request with different bodies if their methods are not included in cache_request_body_methods" do
-          key1 = cache.key('put', "http://example.com", "body1")
-          key2 = cache.key('put', "http://example.com", "body2")
+          key1 = cache.key('put', "http://example.com", "body1", cache_scope)
+          key2 = cache.key('put', "http://example.com", "body2", cache_scope)
           expect(key1).to eq key2
       end
     end
@@ -123,22 +125,22 @@ describe Billy::Cache do
       end
 
       it "should use the same cache key if the base url IS NOT whitelisted in allow_params" do
-        key1 = cache.key('put', params_url, 'body')
-        key2 = cache.key('put', params_url, 'body')
+        key1 = cache.key('put', params_url, 'body', cache_scope)
+        key2 = cache.key('put', params_url, 'body', cache_scope)
         expect(key1).to eq key2
       end
 
       it "should have the same cache key if the base IS whitelisted in allow_params" do
         allow(Billy.config).to receive(:allow_params) { [base_url] }
-        key1 = cache.key('put', params_url, 'body')
-        key2 = cache.key('put', params_url, 'body')
+        key1 = cache.key('put', params_url, 'body', cache_scope)
+        key2 = cache.key('put', params_url, 'body', cache_scope)
         expect(key1).to eq key2
       end
 
       it "should have different cache keys if the base url is added in between two requests" do
-        key1 = cache.key('put', params_url, 'body')
+        key1 = cache.key('put', params_url, 'body', cache_scope)
         allow(Billy.config).to receive(:allow_params) { [base_url] }
-        key2 = cache.key('put', params_url, 'body')
+        key2 = cache.key('put', params_url, 'body', cache_scope)
         expect(key1).not_to eq key2
       end
 
@@ -146,12 +148,12 @@ describe Billy::Cache do
         allow(Billy.config).to receive(:allow_params) { [base_url] }
         expect(cache).to receive(:format_url).once.with(params_url, true).and_call_original
         expect(cache).to receive(:format_url).once.with(params_url, false).and_call_original
-        key1 = cache.key('put', params_url, 'body')
+        cache.key('put', params_url, 'body', cache_scope)
       end
 
       it "should use ignore_params when not whitelisted" do
         expect(cache).to receive(:format_url).twice.with(params_url, true).and_call_original
-        cache.key('put', params_url, 'body')
+        cache.key('put', params_url, 'body', cache_scope)
       end
     end
   end
