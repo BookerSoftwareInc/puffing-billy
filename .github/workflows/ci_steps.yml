@@ -9,27 +9,30 @@ jobs:
   rspec:
     name: "rspec (Ruby ${{ matrix.ruby-version }})"
     runs-on: ubuntu-latest
-    # Run inside ubuntu-20.04 userland for PhantomJS + old Rubies, while still using ubuntu-latest runners (no queue).
-    container: ubuntu:20.04
+    # On your runner, ruby/setup-ruby is detected as "self-hosted" and refuses to install Ruby.
+    # Use official Ruby images so Ruby is preinstalled.
+    container: ${{ matrix.container_image }}
     strategy:
       fail-fast: false
       matrix:
-        ruby-version: ["2.3.8", "2.4", "2.5", "2.6"]
+        include:
+          - ruby-version: "2.3.8"
+            container_image: "ruby:2.3"
+          - ruby-version: "2.4"
+            container_image: "ruby:2.4"
+          - ruby-version: "2.5"
+            container_image: "ruby:2.5"
+          - ruby-version: "2.6"
+            container_image: "ruby:2.6"
 
     steps:
       - name: Install base packages
         run: |
           apt-get update -qq
-          apt-get install -y --no-install-recommends ca-certificates git curl bzip2
+          apt-get install -y --no-install-recommends ca-certificates git curl bzip2 unzip
 
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: false
 
       - name: Install Bundler v1 (Travis parity)
         run: gem install bundler -v '< 2'
