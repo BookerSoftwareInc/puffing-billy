@@ -30,11 +30,11 @@ jobs:
         run: |
           # ruby:2.3 / ruby:2.4 images are based on Debian stretch (EOL) and need archive.debian.org
           if grep -q "stretch" /etc/apt/sources.list 2>/dev/null; then
-            cat > /etc/apt/sources.list <<'EOF'
-            deb http://archive.debian.org/debian stretch main
-            deb http://archive.debian.org/debian stretch-updates main
-            deb http://archive.debian.org/debian-security stretch/updates main
-            EOF
+            printf '%s\n' \
+              'deb http://archive.debian.org/debian stretch main' \
+              'deb http://archive.debian.org/debian stretch-updates main' \
+              'deb http://archive.debian.org/debian-security stretch/updates main' \
+              > /etc/apt/sources.list
             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
           fi
           apt-get update -qq -o Acquire::Check-Valid-Until=false
@@ -56,11 +56,11 @@ jobs:
         run: |
           # ruby:2.3 / ruby:2.4 images are based on Debian stretch (EOL) and need archive.debian.org
           if grep -q "stretch" /etc/apt/sources.list 2>/dev/null; then
-            cat > /etc/apt/sources.list <<'EOF'
-            deb http://archive.debian.org/debian stretch main
-            deb http://archive.debian.org/debian stretch-updates main
-            deb http://archive.debian.org/debian-security stretch/updates main
-            EOF
+            printf '%s\n' \
+              'deb http://archive.debian.org/debian stretch main' \
+              'deb http://archive.debian.org/debian stretch-updates main' \
+              'deb http://archive.debian.org/debian-security stretch/updates main' \
+              > /etc/apt/sources.list
             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
           fi
           apt-get update -qq -o Acquire::Check-Valid-Until=false
