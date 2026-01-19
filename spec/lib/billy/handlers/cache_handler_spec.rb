@@ -14,6 +14,11 @@ describe Billy::CacheHandler do
   end
   let(:cache_scope) { 0 }
 
+  # Ensure refresh_persisted_cache is false so handles_request? calls cached?
+  before do
+    allow(Billy.config).to receive(:refresh_persisted_cache).and_return(false)
+  end
+
   it 'delegates #reset to the cache' do
     expect(Billy::Cache.instance).to receive(:reset).at_least(:once)
     handler.reset
