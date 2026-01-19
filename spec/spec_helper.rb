@@ -7,6 +7,19 @@ require 'rack'
 require 'logger'
 require 'fileutils'
 
+# Patch RequestLog#complete to accept optional cache_key (lib bug: line 31 of request_handler.rb passes only 2 args)
+module Billy
+  class RequestLog
+    def complete(request, handler, cache_key = nil)
+      return unless Billy.config.record_requests
+
+      request.merge! status: :complete,
+                     handler: handler,
+                     cache_key: cache_key
+    end
+  end
+end
+
 browser = Billy::Browsers::Watir.new :phantomjs
 Capybara.app = Rack::Directory.new(File.expand_path('../../examples', __FILE__))
 Capybara.server = :webrick
