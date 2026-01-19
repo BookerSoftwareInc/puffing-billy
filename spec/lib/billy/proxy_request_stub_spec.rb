@@ -187,7 +187,8 @@ describe Billy::ProxyRequestStub do
       allow(Billy.proxy.request_handler.handlers[:proxy]).to receive(:handle_request).and_return(
         status: 200,
         headers: {},
-        content: 'original'
+        content: 'original',
+        cache_key: 'cache_key'
       )
       # Add the missing em-synchrony call which is done by
       # ProxyConnection#handle_request instead.
@@ -208,6 +209,7 @@ describe Billy::ProxyRequestStub do
 
         expect(subject.call('GET', url, {}, {}, 'original')).to eql [
           205,
+          {},
           'modified'
         ]
       end

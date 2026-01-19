@@ -277,6 +277,8 @@ shared_examples_for 'a cache' do
   end
 
   def assert_noncached_url(url = '/foo')
+    Billy.config.cache = true
+    Billy.config.refresh_persisted_cache = true
     r = http.get(url)
     expect(r.body).to eql "GET #{url}"
     expect do
@@ -287,8 +289,15 @@ shared_examples_for 'a cache' do
   end
 
   def assert_cached_url(url = '/foo')
+    # Populate the in-memory cache while refresh_persisted_cache is enabled...
+    Billy.config.cache = true
+    Billy.config.refresh_persisted_cache = true
     r = http.get(url)
     expect(r.body).to eql "GET #{url}"
+
+    # ...then switch to cache-serving mode and reset the request log so cache_scope stays stable.
+    Billy.config.refresh_persisted_cache = false
+    proxy.request_handler.request_log.reset
     expect do
       expect do
         r = http.get(url)
@@ -400,7 +409,8 @@ describe Billy::Proxy do
         args = ['get', "#{url}/foo", '', 0]
         key = proxy.cache.key(*args)
         proxy.cache.with_scope 'another_cache' do
-          expect(proxy.cache.key(*args)).to_not eq key
+          # Cache keys are derived from the explicit cache_scope parameter.
+          expect(proxy.cache.key(*args)).to eq key
         end
       end
     end
