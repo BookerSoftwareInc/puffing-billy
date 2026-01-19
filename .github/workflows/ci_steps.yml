@@ -31,11 +31,11 @@ jobs:
           # ruby:2.3 / ruby:2.4 images are based on Debian stretch (EOL) and need archive.debian.org
           if grep -q "stretch" /etc/apt/sources.list 2>/dev/null; then
             printf '%s\n' \
-              'deb http://archive.debian.org/debian stretch main' \
-              'deb http://archive.debian.org/debian stretch-updates main' \
-              'deb http://archive.debian.org/debian-security stretch/updates main' \
+              'deb [trusted=yes] http://archive.debian.org/debian stretch main' \
               > /etc/apt/sources.list
             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
+            echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
           fi
           apt-get update -qq -o Acquire::Check-Valid-Until=false
           apt-get install -y --no-install-recommends ca-certificates git curl bzip2 unzip
@@ -57,11 +57,11 @@ jobs:
           # ruby:2.3 / ruby:2.4 images are based on Debian stretch (EOL) and need archive.debian.org
           if grep -q "stretch" /etc/apt/sources.list 2>/dev/null; then
             printf '%s\n' \
-              'deb http://archive.debian.org/debian stretch main' \
-              'deb http://archive.debian.org/debian stretch-updates main' \
-              'deb http://archive.debian.org/debian-security stretch/updates main' \
+              'deb [trusted=yes] http://archive.debian.org/debian stretch main' \
               > /etc/apt/sources.list
             echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+            echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
+            echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
           fi
           apt-get update -qq -o Acquire::Check-Valid-Until=false
           apt-get install -y --no-install-recommends \
