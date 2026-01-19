@@ -24,7 +24,6 @@ jobs:
     steps:
       - name: Fix APT for EOL Debian
         run: |
-          # Buster is EOL, use archive
           if grep -q buster /etc/apt/sources.list 2>/dev/null; then
             echo "deb [trusted=yes] http://archive.debian.org/debian buster main" > /etc/apt/sources.list
             echo "deb [trusted=yes] http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
@@ -72,17 +71,14 @@ jobs:
       - name: Bundle install
         run: |
           bundle config set force_ruby_platform true
-          # Pin gems to Ruby 2.x compatible versions
-          cat >> Gemfile <<'EOF'
-          gem 'ffi', '~> 1.15.0'
-          gem 'regexp_parser', '~> 1.8'
-          gem 'public_suffix', '~> 4.0'
-          gem 'capybara', '~> 3.35.0'
-          gem 'addressable', '~> 2.7.0'
-          gem 'nokogiri', '~> 1.12.0'
-          gem 'mini_mime', '~> 1.1.0'
-          gem 'rack', '~> 2.2.0'
-EOF
+          echo "gem 'ffi', '~> 1.15.0'" >> Gemfile
+          echo "gem 'regexp_parser', '~> 1.8'" >> Gemfile
+          echo "gem 'public_suffix', '~> 4.0'" >> Gemfile
+          echo "gem 'capybara', '~> 3.35.0'" >> Gemfile
+          echo "gem 'addressable', '~> 2.7.0'" >> Gemfile
+          echo "gem 'nokogiri', '~> 1.12.0'" >> Gemfile
+          echo "gem 'mini_mime', '~> 1.1.0'" >> Gemfile
+          echo "gem 'rack', '~> 2.2.0'" >> Gemfile
           bundle install --jobs 4 --retry 3
         env:
           QMAKE: /usr/bin/qmake
