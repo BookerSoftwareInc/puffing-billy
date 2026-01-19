@@ -1,0 +1,78 @@
+name: "Ruby Gem CI"
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  rspec:
+    name: "rspec (Ruby ${{ matrix.ruby-version }} on ${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Ruby 2.3.x is unstable on ubuntu-latest (OpenSSL-related segfaults).
+          - ruby-version: "2.3.8"
+            os: ubuntu-20.04
+            openssl_conf: /etc/ssl/openssl.cnf
+            openssl_modules: /usr/lib/x86_64-linux-gnu/ossl-modules
+          - ruby-version: "2.4"
+            os: ubuntu-latest
+            openssl_conf: /dev/null
+            openssl_modules: ""
+          - ruby-version: "2.5"
+            os: ubuntu-latest
+            openssl_conf: /dev/null
+            openssl_modules: ""
+          - ruby-version: "2.6"
+            os: ubuntu-latest
+            openssl_conf: /dev/null
+            openssl_modules: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: false
+
+      - name: Install Bundler v1 (Travis parity)
+        run: gem install bundler -v '< 2'
+
+      - name: Use Ruby 2.x compatible ffi (CI-only)
+        run: |
+          bundle config set force_ruby_platform true
+          cp Gemfile Gemfile.ci
+          echo "gem 'ffi', '~> 1.15'" >> Gemfile.ci
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            bzip2 curl \
+            build-essential g++ xvfb \
+            libssl-dev \
+            qt5-qmake qtbase5-dev libqt5webkit5-dev
+
+      - name: Install PhantomJS 2.1.1
+        env:
+          OPENSSL_CONF: ${{ matrix.openssl_conf }}
+          OPENSSL_MODULES: ${{ matrix.openssl_modules }}
+        run: |
+          sudo mkdir -p /tmp/phantomjs
+          curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 \
+            | sudo tar -xj --strip-components=1 -C /tmp/phantomjs
+          sudo mv /tmp/phantomjs/bin/phantomjs /usr/local/bin/phantomjs
+          sudo rm -rf /tmp/phantomjs
+          phantomjs --version
+
+      - name: Install gems
+        run: BUNDLE_GEMFILE=Gemfile.ci bundle install
+
+      - name: rspec
+        run: BUNDLE_GEMFILE=Gemfile.ci xvfb-run -a bundle exec rspec spec --format documentation
