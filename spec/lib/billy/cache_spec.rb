@@ -144,8 +144,7 @@ describe Billy::Cache do
         key1 = cache.key('put', params_url, 'body', cache_scope)
         allow(Billy.config).to receive(:allow_params) { [base_url] }
         key2 = cache.key('put', params_url, 'body', cache_scope)
-        # Body hashing is commented out, so keys are the same regardless of body
-            expect(key1).to eq key2
+        expect(key1).not_to eq key2
       end
 
       it "should not use ignore_params when whitelisted" do
