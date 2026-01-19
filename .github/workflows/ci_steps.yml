@@ -9,9 +9,9 @@ jobs:
   rspec:
     name: "rspec (Ruby ${{ matrix.ruby-version }})"
     runs-on: ubuntu-latest
-    # On your runner, ruby/setup-ruby is detected as "self-hosted" and refuses to install Ruby.
-    # Use official Ruby images so Ruby is preinstalled.
     container: ${{ matrix.container_image }}
+    env:
+      QT_SELECT: qt5
     strategy:
       fail-fast: false
       matrix:
@@ -26,17 +26,25 @@ jobs:
             container_image: "ruby:2.6"
 
     steps:
+      - name: Fix APT sources for EOL Debian versions
+        run: |
+          # Detect Debian version and fix APT sources for EOL releases
+          if grep -q "stretch" /etc/apt/sources.list 2>/dev/null; then
+            echo "Detected Debian Stretch (EOL) - switching to archive"
+            printf '%s\n' 'deb [trusted=yes] http://archive.debian.org/debian stretch main' > /etc/apt/sources.list
+          elif grep -q "buster" /etc/apt/sources.list 2>/dev/null; then
+            echo "Detected Debian Buster (EOL) - switching to archive"
+            printf '%s\n' \
+              'deb [trusted=yes] http://archive.debian.org/debian buster main' \
+              'deb [trusted=yes] http://archive.debian.org/debian-security buster/updates main' \
+              > /etc/apt/sources.list
+          fi
+          echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
+          echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
+          echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
+
       - name: Install base packages
         run: |
-          # ruby:2.3 / ruby:2.4 images are based on Debian stretch (EOL) and need archive.debian.org
-          if grep -q "stretch" /etc/apt/sources.list 2>/dev/null; then
-            printf '%s\n' \
-              'deb [trusted=yes] http://archive.debian.org/debian stretch main' \
-              > /etc/apt/sources.list
-            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-            echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
-            echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
-          fi
           apt-get update -qq -o Acquire::Check-Valid-Until=false
           apt-get install -y --no-install-recommends ca-certificates git curl bzip2 unzip
 
@@ -58,20 +66,11 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          # ruby:2.3 / ruby:2.4 images are based on Debian stretch (EOL) and need archive.debian.org
-          if grep -q "stretch" /etc/apt/sources.list 2>/dev/null; then
-            printf '%s\n' \
-              'deb [trusted=yes] http://archive.debian.org/debian stretch main' \
-              > /etc/apt/sources.list
-            echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until
-            echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure
-            echo 'Acquire::AllowDowngradeToInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99allow-insecure
-          fi
           apt-get update -qq -o Acquire::Check-Valid-Until=false
           apt-get install -y --no-install-recommends \
             build-essential g++ xvfb \
             libssl-dev \
-            qt5-qmake qtbase5-dev libqt5webkit5-dev \
+            qt5-qmake qtbase5-dev libqt5webkit5-dev qtchooser \
             libfontconfig1 libfreetype6 libxrender1 libxext6 libx11-6 libxss1 libxtst6 libxcb1 libxcb-glx0
 
       - name: Install PhantomJS 2.1.1
@@ -84,6 +83,8 @@ jobs:
           phantomjs --version
 
       - name: Install gems
+        env:
+          QMAKE: /usr/lib/qt5/bin/qmake
         run: BUNDLE_GEMFILE=Gemfile.ci bundle install
 
       - name: rspec
