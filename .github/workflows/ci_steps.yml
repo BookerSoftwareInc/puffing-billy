@@ -1,9 +1,8 @@
 name: CI
 
 on:
-  # Disabled until spec changes are manually pushed
-  # push:
-  # pull_request:
+  push:
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -14,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['2.5', '2.6']
+        ruby: ['2.6']
 
     env:
       QT_SELECT: qt5
@@ -83,7 +82,7 @@ jobs:
           gem 'nokogiri', '~> 1.12.0'
           gem 'mini_mime', '~> 1.1.0'
           gem 'rack', '~> 2.2.0'
-          EOF
+EOF
           bundle install --jobs 4 --retry 3
         env:
           QMAKE: /usr/bin/qmake
