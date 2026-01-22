@@ -1,6 +1,9 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -55,12 +58,7 @@ jobs:
           phantomjs --version || echo "PhantomJS installed"
 
       - name: Checkout
-        run: |
-          git config --global --add safe.directory '*'
-          git init
-          git remote add origin https://github.com/${{ github.repository }}.git
-          git fetch --depth 1 origin ${{ github.sha }}
-          git checkout FETCH_HEAD
+        uses: actions/checkout@v4
 
       - name: Install Bundler
         run: gem install bundler -v '< 2'
