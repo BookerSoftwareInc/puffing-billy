@@ -1,0 +1,79 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Ruby ${{ matrix.ruby }}
+    runs-on: ubuntu-latest
+    container: ruby:${{ matrix.ruby }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['2.6']
+
+    env:
+      QT_SELECT: qt5
+      OPENSSL_CONF: /dev/null
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+
+    steps:
+      - name: Fix APT for EOL Debian
+        run: |
+          if grep -q buster /etc/apt/sources.list 2>/dev/null; then
+            echo "deb [trusted=yes] http://archive.debian.org/debian buster main" > /etc/apt/sources.list
+            echo "deb [trusted=yes] http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
+          fi
+          echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99archive
+          echo 'Acquire::AllowInsecureRepositories "true";' >> /etc/apt/apt.conf.d/99archive
+
+      - name: Install system packages
+        run: |
+          apt-get update -qq
+          apt-get install -y --no-install-recommends \
+            git ca-certificates curl bzip2 \
+            build-essential g++ make \
+            qt5-qmake qtbase5-dev libqt5webkit5-dev qtchooser \
+            xvfb xauth libfontconfig1 libfreetype6 libxrender1 libxext6 libx11-6 \
+            libssl-dev zlib1g-dev
+
+      - name: Setup qmake
+        run: |
+          mkdir -p /usr/share/qtchooser
+          echo "/usr/lib/x86_64-linux-gnu/qt5/bin" > /usr/share/qtchooser/qt5.conf
+          echo "/usr/lib/x86_64-linux-gnu" >> /usr/share/qtchooser/qt5.conf
+          ln -sf /usr/lib/x86_64-linux-gnu/qt5/bin/qmake /usr/bin/qmake 2>/dev/null || true
+          qmake --version
+
+      - name: Install PhantomJS
+        run: |
+          curl -L -o phantomjs.tar.bz2 "https://github.com/Medium/phantomjs/releases/download/v2.1.1/phantomjs-2.1.1-linux-x86_64.tar.bz2"
+          tar xf phantomjs.tar.bz2 --wildcards '*/bin/phantomjs' --strip-components=2
+          mv phantomjs /usr/local/bin/
+          rm phantomjs.tar.bz2
+          phantomjs --version || echo "PhantomJS installed"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Bundler
+        run: gem install bundler -v '< 2'
+
+      - name: Bundle install
+        run: |
+          bundle config set force_ruby_platform true
+          echo "gem 'ffi', '~> 1.15.0'" >> Gemfile
+          echo "gem 'regexp_parser', '~> 1.8'" >> Gemfile
+          echo "gem 'public_suffix', '~> 4.0'" >> Gemfile
+          echo "gem 'capybara', '~> 3.35.0'" >> Gemfile
+          echo "gem 'addressable', '~> 2.7.0'" >> Gemfile
+          echo "gem 'nokogiri', '~> 1.12.0'" >> Gemfile
+          echo "gem 'mini_mime', '~> 1.1.0'" >> Gemfile
+          echo "gem 'rack', '~> 2.2.0'" >> Gemfile
+          bundle install --jobs 4 --retry 3
+        env:
+          QMAKE: /usr/bin/qmake
+
+      - name: Run tests
+        run: xvfb-run -a bundle exec rspec spec

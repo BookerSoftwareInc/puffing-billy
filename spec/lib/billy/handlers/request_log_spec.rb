@@ -2,11 +2,14 @@ require 'spec_helper'
 
 describe Billy::RequestLog do
   let(:request_log) { Billy::RequestLog.new }
+  let(:cache_scope) { 0 }
 
   describe '#record' do
     it 'returns the request details if record_requests is enabled' do
       allow(Billy::config).to receive(:record_requests).and_return(true)
       expected_request = {
+        scope: cache_scope,
+        cache_key: nil,
         status: :inflight,
         handler: nil,
         method: :method,
@@ -14,12 +17,12 @@ describe Billy::RequestLog do
         headers: :headers,
         body: :body
       }
-      expect(request_log.record(:method, :url, :headers, :body)).to eql(expected_request)
+      expect(request_log.record(:method, :url, :headers, :body, cache_scope)).to eql(expected_request)
     end
 
     it 'returns nil if record_requests is disabled' do
       allow(Billy::config).to receive(:record_requests).and_return(false)
-      expect(request_log.record(:method, :url, :headers, :body)).to be_nil
+      expect(request_log.record(:method, :url, :headers, :body, cache_scope)).to be_nil
     end
   end
 
@@ -27,8 +30,10 @@ describe Billy::RequestLog do
     it 'marks the request as complete if record_requests is enabled' do
       allow(Billy::config).to receive(:record_requests).and_return(true)
 
-      request = request_log.record(:method, :url, :headers, :body)
+      request = request_log.record(:method, :url, :headers, :body, cache_scope)
       expected_request = {
+        scope: cache_scope,
+        cache_key: :cache_key,
         status: :complete,
         handler: :handler,
         method: :method,
@@ -36,12 +41,12 @@ describe Billy::RequestLog do
         headers: :headers,
         body: :body
       }
-      expect(request_log.complete(request, :handler)).to eql(expected_request)
+      expect(request_log.complete(request, :handler, :cache_key)).to eql(expected_request)
     end
 
     it 'marks the request as complete if record_requests is disabled' do
       allow(Billy::config).to receive(:record_requests).and_return(false)
-      expect(request_log.complete(nil, :handler)).to be_nil
+      expect(request_log.complete(nil, :handler, :cache_key)).to be_nil
     end
   end
 
@@ -53,8 +58,8 @@ describe Billy::RequestLog do
     it 'returns the currently known requests' do
       allow(Billy::config).to receive(:record_requests).and_return(true)
 
-      request1 = request_log.record(:method, :url, :headers, :body)
-      request2 = request_log.record(:method, :url, :headers, :body)
+      request1 = request_log.record(:method, :url, :headers, :body, cache_scope)
+      request2 = request_log.record(:method, :url, :headers, :body, cache_scope)
       expect(request_log.requests).to eql([request1, request2])
     end
   end
@@ -63,8 +68,8 @@ describe Billy::RequestLog do
     it 'resets known requests' do
       allow(Billy::config).to receive(:record_requests).and_return(true)
 
-      request1 = request_log.record(:method, :url, :headers, :body)
-      request2 = request_log.record(:method, :url, :headers, :body)
+      request1 = request_log.record(:method, :url, :headers, :body, cache_scope)
+      request2 = request_log.record(:method, :url, :headers, :body, cache_scope)
       expect(request_log.requests).to eql([request1, request2])
 
       request_log.reset
