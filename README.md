@@ -294,7 +294,7 @@ Billy.configure do |c|
   c.non_whitelisted_requests_disabled = false
   c.cache_path = 'spec/req_cache/'
   c.certs_path = 'spec/req_certs/'
-  c.proxy_host = 'example.com' # defaults to localhost
+  c.proxy_host = 'example.com' # defaults to 127.0.0.1
   c.proxy_port = 12345 # defaults to random
   c.proxied_request_host = nil
   c.proxied_request_port = 80

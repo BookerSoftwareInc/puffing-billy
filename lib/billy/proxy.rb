@@ -20,7 +20,7 @@ module Billy
     def start(threaded = true)
       if threaded
         Thread.new { main_loop }
-        sleep(0.01) while !defined?(@signature) || @signature.nil?
+        sleep(0.01) while !defined?(@port) || @port.nil?
       else
         main_loop
       end
@@ -43,7 +43,7 @@ module Billy
     end
 
     def port
-      Socket.unpack_sockaddr_in(EM.get_sockname(@signature)).first
+      @port
     end
 
     def cache
@@ -83,6 +83,8 @@ module Billy
             Billy.log :error, msg
           end
         end
+
+        @port = Socket.unpack_sockaddr_in(EM.get_sockname(@signature)).first
 
         Billy.log(:info, "puffing-billy: Proxy listening on #{url}")
       end
