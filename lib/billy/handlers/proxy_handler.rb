@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'billy/handlers/handler'
 require 'addressable/uri'
 require 'eventmachine'
@@ -11,31 +13,30 @@ module Billy
 
     def_delegators :request_log, :requests
 
-    def handles_request?(_method, url, _headers, _body, cache_scope)
-      purl = url.match(/.*staging\.hirefrederick.com\:443/)
+    def handles_request?(_method, url, _headers, _body, _cache_scope)
+      purl = url.match(/.*staging\.hirefrederick.com:443/)
       return false if !Billy.config.refresh_persisted_cache && purl
+
       !disabled_request?(url)
     end
 
     def handle_request(method, url, headers, body, cache_scope)
       if handles_request?(method, url, headers, body, cache_scope)
         opts = { inactivity_timeout: Billy.config.proxied_request_inactivity_timeout,
-                 connect_timeout:    Billy.config.proxied_request_connect_timeout }
+                 connect_timeout: Billy.config.proxied_request_connect_timeout }
 
         if Billy.config.proxied_request_host && !bypass_internal_proxy?(url)
           opts.merge!({ proxy: { host: Billy.config.proxied_request_host,
-                                 port: Billy.config.proxied_request_port }} )
+                                 port: Billy.config.proxied_request_port } })
         end
 
-        #cache_scope = Billy::Cache.instance.scope
+        # cache_scope = Billy::Cache.instance.scope
         cache_key = Billy::Cache.instance.key(method.downcase, url, body, cache_scope)
 
         req = EventMachine::HttpRequest.new(url, opts)
         req = req.send(method.downcase, build_request_options(url, headers, body))
 
-        if req.error
-          return { error: "Request to #{url} failed with error: #{req.error}" }
-        end
+        return { error: "Request to #{url} failed with error: #{req.error}" } if req.error
 
         if req.response
           response = process_response(req, cache_key)
@@ -43,12 +44,13 @@ module Billy
           unless allowed_response_code?(response[:status])
             if Billy.config.non_successful_error_level == :error
               return { error: "#{method} Request failed due to response status #{response[:status]} for '#{url}' which was not allowed." }
-            else
-              Billy.log(:warn, "puffing-billy: Received response status code #{response[:status]} for '#{url}'")
             end
+
+            Billy.log(:warn, "puffing-billy: Received response status code #{response[:status]} for '#{url}'")
+
           end
 
-          purl = url.match(/.*staging\.hirefrederick.com\:443(.*)/)
+          purl = url.match(/.*staging\.hirefrederick.com:443(.*)/)
           if cacheable?(url, response[:headers], response[:status])
             puts "CACHING: #{cache_scope} #{method} #{purl.captures[0]} #{cache_key}" if purl
 
@@ -64,8 +66,11 @@ module Billy
               response[:content]
             )
           else
-            Billy.log(:info, "puffing-billy: NOT CACHEABLE: Status: #{response[:status]} #{cache_scope} #{method} #{url} #{cache_key}")
-            puts "NOT CACHABLE: Status: #{response[:status]} #{cache_scope} #{method} #{purl.captures[0]} #{cache_key}" if purl
+            Billy.log(:info,
+                      "puffing-billy: NOT CACHEABLE: Status: #{response[:status]} #{cache_scope} #{method} #{url} #{cache_key}")
+            if purl
+              puts "NOT CACHABLE: Status: #{response[:status]} #{cache_scope} #{method} #{purl.captures[0]} #{cache_key}"
+            end
           end
 
           Billy.log(:info, "puffing-billy: PROXY #{method} succeeded for #{url}")
@@ -75,14 +80,14 @@ module Billy
       nil
     end
 
-  private
+    private
 
     def build_request_options(url, headers, body)
-      headers = Hash[headers.map { |k, v| [k.downcase, v] }]
+      headers = headers.transform_keys(&:downcase)
       headers['accept-encoding'] = ''
 
       uri = Addressable::URI.parse(url)
-      headers.merge!({'authorization' => [uri.user, uri.password]}) if uri.userinfo
+      headers.merge!({ 'authorization' => [uri.user, uri.password] }) if uri.userinfo
 
       req_opts = {
         redirects: 0,
@@ -122,12 +127,12 @@ module Billy
       # Don't save a cache file if the cache is off or we're not refreshing the cache
       return false if !Billy.config.cache || !Billy.config.refresh_persisted_cache
 
-      #orig_url = url
+      # orig_url = url
       url = Addressable::URI.parse(url)
       # Cache the responses if they aren't whitelisted host[:port]s but always cache blacklisted paths on any hosts
-      #if orig_url.match(/background/)
-        #byebug
-      #end
+      # if orig_url.match(/background/)
+      # byebug
+      # end
       cacheable_status?(status) && (!whitelisted_url?(url) || blacklisted_path?(url.path))
     end
 

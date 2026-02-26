@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'addressable/uri'
 require 'eventmachine'
 require 'http/parser'
@@ -9,8 +11,7 @@ module Billy
   class ProxyConnection < EventMachine::Connection
     include EventMachine::Deferrable
 
-    attr_accessor :handler
-    attr_accessor :cache
+    attr_accessor :handler, :cache
 
     def post_init
       @parser = Http::Parser.new(self)
@@ -22,7 +23,7 @@ module Billy
 
     def on_message_begin
       @headers = nil
-      @body = ''
+      @body = String.new
     end
 
     def on_headers_complete(headers)
@@ -61,7 +62,7 @@ module Billy
         handler.handle_request(@parser.http_method, @url, @headers, @body).tap do |response|
           if response.key?(:error)
             close_connection
-            fail "puffing-billy: #{response[:error]}"
+            raise "puffing-billy: #{response[:error]}"
           else
             send_response(response)
           end
@@ -74,13 +75,13 @@ module Billy
     def prepare_response_headers_for_evma_httpserver(headers)
       # Remove the headers below because they will be added later by evma_httpserver (EventMachine::DelegatedHttpResponse).
       # See https://github.com/eventmachine/evma_httpserver/blob/master/lib/evma_httpserver/response.rb
-      headers_to_remove = [
-        'transfer-encoding',
-        'content-length',
-        'content-encoding'
+      headers_to_remove = %w[
+        transfer-encoding
+        content-length
+        content-encoding
       ]
 
-      headers.delete_if {|key, value| headers_to_remove.include?(key.downcase) }
+      headers.delete_if { |key, _value| headers_to_remove.include?(key.downcase) }
     end
 
     def send_response(response)

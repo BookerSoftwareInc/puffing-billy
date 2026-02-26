@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'billy/handlers/handler'
 require 'addressable/uri'
 
@@ -6,21 +8,19 @@ module Billy
     include Handler
 
     def handle_request(method, url, headers, body, cache_scope)
-      if handles_request?(method, url, headers, body, cache_scope)
-        if (stub = find_stub(method, url))
-          query_string = Addressable::URI.parse(url).query || ''
-          params = CGI.parse(query_string)
-          stub.call(method, url, params, headers, body).tap do |response|
-            Billy.log(:info, "puffing-billy: STUB #{method} for '#{url}'")
-            return { status: response[0], headers: response[1], content: response[2] }
-          end
+      if handles_request?(method, url, headers, body, cache_scope) && (stub = find_stub(method, url))
+        query_string = Addressable::URI.parse(url).query || ''
+        params = CGI.parse(query_string)
+        stub.call(method, url, params, headers, body).tap do |response|
+          Billy.log(:info, "puffing-billy: STUB #{method} for '#{url}'")
+          return { status: response[0], headers: response[1], content: response[2] }
         end
       end
 
       nil
     end
 
-    def handles_request?(method, url, _headers, _body, cache_scope)
+    def handles_request?(method, url, _headers, _body, _cache_scope)
       !find_stub(method, url).nil?
     end
 

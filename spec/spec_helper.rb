@@ -1,4 +1,6 @@
-Dir[File.expand_path('../support/**/*.rb', __FILE__)].each { |f| require f }
+# frozen_string_literal: true
+
+Dir[File.expand_path('support/**/*.rb', __dir__)].each { |f| require f }
 
 require 'pry'
 require 'billy/capybara/rspec'
@@ -20,13 +22,13 @@ module Billy
   end
 end
 
-browser = Billy::Browsers::Watir.new :phantomjs
-Capybara.app = Rack::Directory.new(File.expand_path('../../examples', __FILE__))
-Capybara.server = :webrick
-Capybara.javascript_driver = :poltergeist_billy
+browser = Billy::Browsers::Watir.new :chrome
+Capybara.app = Rack::Directory.new(File.expand_path('../examples', __dir__))
+Capybara.server = :puma, { Silent: true }
+Capybara.javascript_driver = :selenium_chrome_headless_billy
 
 Billy.configure do |config|
-  config.logger = Logger.new(File.expand_path('../../log/test.log', __FILE__))
+  config.logger = Logger.new(File.expand_path('../log/test.log', __dir__))
 end
 
 RSpec.configure do |config|
@@ -45,11 +47,11 @@ RSpec.configure do |config|
     @browser = browser
   end
 
-  config.before :each do
+  config.before do
     proxy.reset_cache
   end
 
-  config.after :each do
+  config.after do
     Billy.config.reset
   end
 

@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
-describe 'jQuery POST API example', type: :feature, js: true do
+describe 'jQuery POST API example', :js, type: :feature do
   before do
     proxy.stub('http://example.com/api', method: 'post').and_return(
       headers: { 'Access-Control-Allow-Origin' => '*' },

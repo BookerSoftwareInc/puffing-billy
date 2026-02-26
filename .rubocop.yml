@@ -1,0 +1,5 @@
+plugins:
+  - rubocop-rspec
+  - rubocop-capybara
+
+inherit_from: .rubocop_todo.yml

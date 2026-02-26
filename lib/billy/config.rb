@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 require 'logger'
 require 'tmpdir'
 
 module Billy
   class Config
-    DEFAULT_WHITELIST = ['127.0.0.1', 'localhost']
+    DEFAULT_WHITELIST = ['127.0.0.1', 'localhost'].freeze
     RANDOM_AVAILABLE_PORT = 0 # https://github.com/eventmachine/eventmachine/wiki/FAQ#wiki-can-i-start-a-server-on-a-random-available-port
 
     attr_accessor :logger, :cache, :cache_request_headers, :whitelist, :path_blacklist, :ignore_params, :allow_params,
@@ -15,7 +17,7 @@ module Billy
                   :refresh_persisted_cache
 
     def initialize
-      @logger = defined?(Rails) ? Rails.logger : Logger.new(STDOUT)
+      @logger = defined?(Rails) ? Rails.logger : Logger.new($stdout)
       reset
     end
 
@@ -61,12 +63,10 @@ module Billy
   end
 
   def self.log(*args)
-    unless config.logger.nil?
-      config.logger.send(*args)
-    end
-  end
+    return if config.logger.nil?
 
-  private
+    config.logger.send(*args)
+  end
 
   def self.config
     @config ||= Config.new

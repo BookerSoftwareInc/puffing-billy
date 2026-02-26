@@ -1,4 +1,3 @@
-# encoding: utf-8
 # frozen_string_literal: true
 
 require 'openssl'
@@ -69,7 +68,7 @@ module Billy
       cert = OpenSSL::X509::Certificate.new
       configure(cert)
       add_extensions(cert)
-      cert.sign(key, OpenSSL::Digest::SHA256.new)
+      cert.sign(key, OpenSSL::Digest.new('SHA256'))
     end
 
     # Setup all relevant properties of the given certificate to produce

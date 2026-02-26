@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'cgi'
 require 'eventmachine'
 require 'timeout'
@@ -7,7 +9,8 @@ module Billy
     extend Forwardable
     attr_reader :request_handler
 
-    def_delegators :request_handler, :stub, :stubs, :unstub, :reset, :reset_cache, :restore_cache, :requests, :handle_request
+    def_delegators :request_handler, :stub, :stubs, :unstub, :reset, :reset_cache, :restore_cache, :requests,
+                   :handle_request
 
     def initialize
       @request_handler = Billy::RequestHandler.new
@@ -17,7 +20,7 @@ module Billy
     def start(threaded = true)
       if threaded
         Thread.new { main_loop }
-        sleep(0.01) while (not defined?(@signature)) || @signature.nil?
+        sleep(0.01) while !defined?(@signature) || @signature.nil?
       else
         main_loop
       end
@@ -50,7 +53,7 @@ module Billy
     protected
 
     def wait_for_server_shutdown!(server_port)
-      Timeout::timeout(60) do
+      Timeout.timeout(60) do
         sleep(0.01) while port_in_use? server_port
       end
     rescue Timeout::Error
