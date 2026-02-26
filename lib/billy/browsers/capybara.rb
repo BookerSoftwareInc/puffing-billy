@@ -5,17 +5,10 @@ require 'billy'
 module Billy
   module Browsers
     class Capybara
-      DRIVERS = {
-        selenium: 'selenium/webdriver',
-        apparition: 'capybara/apparition'
-      }.freeze
-
       def self.register_drivers
-        DRIVERS.each do |name, driver|
-          require driver
-          send("register_#{name}_driver")
-        rescue LoadError
-        end
+        require 'selenium/webdriver'
+        register_selenium_driver
+      rescue LoadError
       end
 
       def self.register_selenium_driver
@@ -30,6 +23,7 @@ module Billy
 
         ::Capybara.register_driver :selenium_chrome_billy do |app|
           options = Selenium::WebDriver::Chrome::Options.new
+          options.binary = ENV['CHROME_BIN'] if ENV['CHROME_BIN']
           options.add_argument("--proxy-server=#{Billy.proxy.host}:#{Billy.proxy.port}")
 
           ::Capybara::Selenium::Driver.new(
@@ -40,6 +34,7 @@ module Billy
 
         ::Capybara.register_driver :selenium_chrome_headless_billy do |app|
           options = Selenium::WebDriver::Chrome::Options.new
+          options.binary = ENV['CHROME_BIN'] if ENV['CHROME_BIN']
 
           options.add_argument("--headless=new")
           options.add_argument("--no-sandbox")
@@ -55,13 +50,6 @@ module Billy
         end
       end
 
-      def self.register_apparition_driver
-        ::Capybara.register_driver :apparition_billy do |app|
-          ::Capybara::Apparition::Driver.new(app, ignore_https_errors: true).tap do |driver|
-            driver.set_proxy(Billy.proxy.host, Billy.proxy.port)
-          end
-        end
-      end
     end
   end
 end

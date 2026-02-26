@@ -25,7 +25,6 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'http_parser.rb', '~> 0.8.0'
   gem.add_runtime_dependency 'multi_json'
 
-  gem.add_development_dependency 'apparition'
   gem.add_development_dependency 'capybara'
   gem.add_development_dependency 'cucumber'
   gem.add_development_dependency 'faraday'

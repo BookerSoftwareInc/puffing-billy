@@ -22,7 +22,13 @@ module Billy
   end
 end
 
-browser = Billy::Browsers::Watir.new :chrome
+chrome_options = Selenium::WebDriver::Chrome::Options.new
+chrome_options.add_argument('--headless=new')
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--disable-gpu')
+chrome_options.binary = ENV['CHROME_BIN'] if ENV['CHROME_BIN']
+browser = Billy::Browsers::Watir.new :chrome, options: chrome_options
 Capybara.app = Rack::Directory.new(File.expand_path('../examples', __dir__))
 Capybara.server = :puma, { Silent: true }
 Capybara.javascript_driver = :selenium_chrome_headless_billy

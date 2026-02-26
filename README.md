@@ -58,11 +58,12 @@ In your `rails_helper.rb`:
 ```ruby
 require 'billy/capybara/rspec'
 
-# select a driver for your chosen browser environment
-Capybara.javascript_driver = :selenium_billy                 # Firefox
-# Capybara.javascript_driver = :selenium_chrome_billy        # Chrome
-# Capybara.javascript_driver = :selenium_chrome_headless_billy # Chrome (headless, recommended for CI)
-# Capybara.javascript_driver = :apparition_billy             # Apparition
+# Select a driver for your chosen browser environment.
+# The :selenium_chrome_billy and :selenium_chrome_headless_billy drivers
+# respect the CHROME_BIN environment variable for custom Chrome/Chromium paths.
+Capybara.javascript_driver = :selenium_billy                    # Firefox
+# Capybara.javascript_driver = :selenium_chrome_billy           # Chrome
+# Capybara.javascript_driver = :selenium_chrome_headless_billy  # Chrome (headless, recommended for CI)
 ```
 
 ### Setup for Watir
@@ -72,9 +73,19 @@ In your `rails_helper.rb`:
 ```ruby
 require 'billy/watir/rspec'
 
-# select a driver for your chosen browser environment
+# Basic usage
 @browser = Billy::Browsers::Watir.new :chrome
 # @browser = Billy::Browsers::Watir.new :firefox
+
+# CI / containerized environments (Docker, GitHub Actions)
+# Pass Chrome options to enable headless mode and container-safe flags.
+# Set CHROME_BIN if Chromium is not at the default google-chrome path.
+options = Selenium::WebDriver::Chrome::Options.new
+options.add_argument('--headless=new')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
+options.binary = ENV['CHROME_BIN'] if ENV['CHROME_BIN']
+@browser = Billy::Browsers::Watir.new :chrome, options: options
 ```
 
 ### In your tests (Capybara/Watir)

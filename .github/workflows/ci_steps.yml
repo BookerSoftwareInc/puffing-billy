@@ -17,12 +17,6 @@ jobs:
       LC_ALL: C.UTF-8
 
     steps:
-      - name: Setup SSH access
-        uses: ubicloud/ssh-runner@v1
-        with:
-            public-ssh-key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCZH/9G6dnwQRu0Rtij382bIIjIE7Eb/1Ja1w9kBN3DwPXMZsfY22XYNJHCspcoyhHpwUR1ZxMoCs4cmh3PVv1Gq9PHX9ogsO0ufeoZdHeoFv53L2yU9nRVtPAqZfkQxrlXQWmDFFHWpld7i4tNZp9j0KW1SS91a9wvttnSo4FwWi8BrUprN9iECaYPgPwwiRybQ37D4grTjbr3SdMev+vCYKVpTQftC7HzRvTJXTO/vHm+16sEOjM+LwqnGipGuBfQjHJnHVwlAT+aF8JxCseitI9TD+52e+5ZJ4oPzStRiccVdFJEkmGglo5n2ZVoN9Di6RL6PJ/SUzAKF8lbpxlf dhruvasagar@dhruvasagar"
-            wait-minutes: 30  # Optional, default is 10 minutes
-
       - name: Install system packages
         run: |
           apt-get update -qq
