@@ -7,7 +7,7 @@ require 'timeout'
 module Billy
   class Proxy
     extend Forwardable
-    attr_reader :request_handler
+    attr_reader :request_handler, :port
 
     def_delegators :request_handler, :stub, :stubs, :unstub, :reset, :reset_cache, :restore_cache, :requests,
                    :handle_request
@@ -40,10 +40,6 @@ module Billy
 
     def host
       Billy.config.proxy_host
-    end
-
-    def port
-      @port
     end
 
     def cache
