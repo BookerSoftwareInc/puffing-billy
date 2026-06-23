@@ -1,4 +1,3 @@
-# encoding: utf-8
 # frozen_string_literal: true
 
 require 'openssl'
@@ -7,7 +6,6 @@ require 'fileutils'
 module Billy
   # A set of common certificate helper methods.
   module CertificateHelpers
-
     # Give back the date from now plus given days.
     def days_from_now(days)
       Time.now + (days * 24 * 60 * 60)

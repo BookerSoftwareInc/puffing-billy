@@ -1,6 +1,8 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
-describe 'jQuery preflight request example', type: :feature, js: true do
+describe 'jQuery preflight request example', :js, type: :feature do
   let(:url) { 'http://example.com/api' }
 
   before do

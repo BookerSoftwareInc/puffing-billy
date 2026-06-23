@@ -1,7 +1,7 @@
-# Puffing Billy [![Gem Version](https://badge.fury.io/rb/puffing-billy.svg)](https://badge.fury.io/rb/puffing-billy) [![Build Status](https://travis-ci.org/oesmith/puffing-billy.svg?branch=master)](https://travis-ci.org/oesmith/puffing-billy)
+# Puffing Billy [![Gem Version](https://badge.fury.io/rb/puffing-billy.svg)](https://badge.fury.io/rb/puffing-billy) [![Build Status](https://github.com/oesmith/puffing-billy/actions/workflows/ci_steps.yml/badge.svg)](https://github.com/oesmith/puffing-billy/actions/workflows/ci_steps.yml)
 
 A rewriting web proxy for testing interactions between your browser and
-external sites. Works with ruby + rspec.
+external sites. Works with ruby (>= 3.3.10) + rspec.
 
 Puffing Billy is like [webmock](https://github.com/bblimke/webmock) or
 [VCR](https://github.com/vcr/vcr), but for your browser.
@@ -30,6 +30,11 @@ end
 You can also record HTTP interactions and replay them later. See
 [caching](#caching) below.
 
+## Requirements
+
+- Ruby >= 3.3.10
+- Chrome/Chromium (recommended) or Firefox for browser-based tests
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -53,19 +58,13 @@ In your `rails_helper.rb`:
 ```ruby
 require 'billy/capybara/rspec'
 
-# select a driver for your chosen browser environment
-Capybara.javascript_driver = :selenium_billy # Uses Firefox
-# Capybara.javascript_driver = :selenium_chrome_billy
-# Capybara.javascript_driver = :selenium_chrome_headless_billy
-# Capybara.javascript_driver = :apparition_billy
-# Capybara.javascript_driver = :webkit_billy
-# Capybara.javascript_driver = :poltergeist_billy
+# Select a driver for your chosen browser environment.
+# The :selenium_chrome_billy and :selenium_chrome_headless_billy drivers
+# respect the CHROME_BIN environment variable for custom Chrome/Chromium paths.
+Capybara.javascript_driver = :selenium_billy                    # Firefox
+# Capybara.javascript_driver = :selenium_chrome_billy           # Chrome
+# Capybara.javascript_driver = :selenium_chrome_headless_billy  # Chrome (headless, recommended for CI)
 ```
-
-> __Note__: `:poltergeist_billy` doesn't support proxying any localhosts, so you must use
-`:webkit_billy`, `:apparition_billy`, or a custom headless selenium registration for
-headless specs when using puffing-billy for other local rack apps.
-See [this phantomjs issue](https://github.com/ariya/phantomjs/issues/11342) for any updates.
 
 ### Setup for Watir
 
@@ -74,10 +73,19 @@ In your `rails_helper.rb`:
 ```ruby
 require 'billy/watir/rspec'
 
-# select a driver for your chosen browser environment
-@browser = Billy::Browsers::Watir.new :firefox
-# @browser = Billy::Browsers::Watir.new = :chrome
-# @browser = Billy::Browsers::Watir.new = :phantomjs
+# Basic usage
+@browser = Billy::Browsers::Watir.new :chrome
+# @browser = Billy::Browsers::Watir.new :firefox
+
+# CI / containerized environments (Docker, GitHub Actions)
+# Pass Chrome options to enable headless mode and container-safe flags.
+# Set CHROME_BIN if Chromium is not at the default google-chrome path.
+options = Selenium::WebDriver::Chrome::Options.new
+options.add_argument('--headless=new')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
+options.binary = ENV['CHROME_BIN'] if ENV['CHROME_BIN']
+@browser = Billy::Browsers::Watir.new :chrome, options: options
 ```
 
 ### In your tests (Capybara/Watir)
@@ -188,7 +196,7 @@ And in steps:
 
 ```ruby
 Before('@billy') do
-  Capybara.current_driver = :poltergeist_billy
+  Capybara.current_driver = :selenium_chrome_headless_billy
 end
 
 And /^a stub for google$/ do
@@ -286,7 +294,7 @@ Billy.configure do |c|
   c.non_whitelisted_requests_disabled = false
   c.cache_path = 'spec/req_cache/'
   c.certs_path = 'spec/req_certs/'
-  c.proxy_host = 'example.com' # defaults to localhost
+  c.proxy_host = 'example.com' # defaults to 127.0.0.1
   c.proxy_port = 12345 # defaults to random
   c.proxied_request_host = nil
   c.proxied_request_port = 80
@@ -648,13 +656,11 @@ this gem.
 
 ### Google Chrome Headless example
 
-Google Chrome/Chromium is capable to run as a test browser with the new
-headless mode which is not able to handle the deprecated
-`--ignore-certificate-errors` flag. But the headless mode is capable of
-handling the user PKI certificate store.  So you just need to import the
-runtime Puffing Billy certificate authority on your system store, or generate a
-new store for your current session. The following examples demonstrates the
-former variant:
+Puffing Billy registers the `:selenium_chrome_headless_billy` driver using
+Chrome's `headless=new` mode (available since Chrome 112). This mode supports
+the user PKI certificate store, so you need to import the Puffing Billy
+certificate authority into your system or session store. The following example
+demonstrates how to do that at test suite startup:
 
 ```ruby
 # Install the fabulous `os` gem first
@@ -742,4 +748,3 @@ custom on-after hook.
 ## TODO
 
 1. Integration for test frameworks other than rspec.
-2. Show errors from the EventMachine reactor loop in the test output.

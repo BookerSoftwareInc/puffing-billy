@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'base64'
 
 # FIXME: Looks like Facebook API changed recently and this test fails consistently now -RS 2018-03-05
-xdescribe 'Facebook API example', type: :feature, js: true do
+xdescribe 'Facebook API example', :js, type: :feature do
   before do
     proxy.stub('https://www.facebook.com:443/dialog/oauth').and_return(proc do |params, _, _|
       # mock a signed request from facebook.  the JS api never verifies the
@@ -15,7 +17,7 @@ xdescribe 'Facebook API example', type: :feature, js: true do
     proxy.stub('https://graph.facebook.com:443/me').and_return(jsonp: { name: 'Tester 1' })
   end
 
-  it 'should show me as logged-in' do
+  it 'shows me as logged-in' do
     visit '/facebook_api.html'
     click_on 'Login'
     expect(page).to have_content 'Hi, Tester 1'

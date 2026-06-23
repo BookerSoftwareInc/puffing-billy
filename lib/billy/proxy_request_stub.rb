@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'multi_json'
 
 module Billy
@@ -20,11 +22,11 @@ module Billy
     def call(method, url, params, headers, body)
       push_request(method, url, params, headers, body)
 
-      if @response.respond_to?(:call)
-        res = @response.call(params, headers, body, url, method)
-      else
-        res = @response
-      end
+      res = if @response.respond_to?(:call)
+              @response.call(params, headers, body, url, method)
+            else
+              @response
+            end
 
       code = res[:code] || 200
 
@@ -36,13 +38,13 @@ module Billy
         body = MultiJson.dump(res[:json])
       elsif res[:jsonp]
         headers = { 'Content-Type' => 'application/javascript' }.merge(headers)
-        if res[:callback]
-          callback = res[:callback]
-        elsif res[:callback_param]
-          callback = params[res[:callback_param]][0]
-        else
-          callback = params['callback'][0]
-        end
+        callback = if res[:callback]
+                     res[:callback]
+                   elsif res[:callback_param]
+                     params[res[:callback_param]][0]
+                   else
+                     params['callback'][0]
+                   end
         body = "#{callback}(#{MultiJson.dump(res[:jsonp])})"
       elsif res[:text]
         headers = { 'Content-Type' => 'text/plain' }.merge(headers)
@@ -62,12 +64,12 @@ module Billy
     end
 
     def matches?(method, url)
-      if @method == 'ALL' || method == @method
-        if @url.is_a?(Regexp)
-          url.match(@url)
-        else
-          Billy.config.strip_query_params ? (url.split('?')[0] == @url) : (url == @url)
-        end
+      return unless @method == 'ALL' || method == @method
+
+      if @url.is_a?(Regexp)
+        url.match(@url)
+      else
+        Billy.config.strip_query_params ? (url.split('?')[0] == @url) : (url == @url)
       end
     end
 
@@ -76,15 +78,15 @@ module Billy
     attr_writer :requests
 
     def push_request(method, url, params, headers, body)
-      if Billy.config.record_stub_requests
-        @requests.push({
-          method: method,
-          url: url,
-          params: params,
-          headers: headers,
-          body: body
-        })
-      end
+      return unless Billy.config.record_stub_requests
+
+      @requests.push({
+                       method: method,
+                       url: url,
+                       params: params,
+                       headers: headers,
+                       body: body
+                     })
     end
   end
 end

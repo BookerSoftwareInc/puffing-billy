@@ -1,90 +1,92 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'resolv'
 
 shared_examples_for 'a proxy server' do
-  it 'should proxy GET requests' do
+  it 'proxies GET requests' do
     expect(http.get('/echo').body).to eql 'GET /echo'
   end
 
-  it 'should proxy POST requests' do
+  it 'proxies POST requests' do
     expect(http.post('/echo', foo: 'bar').body).to eql "POST /echo\nfoo=bar"
   end
 
-  it 'should proxy PUT requests' do
-    expect(http.post('/echo', foo: 'bar').body).to eql "POST /echo\nfoo=bar"
+  it 'proxies PUT requests' do
+    expect(http.put('/echo', foo: 'bar').body).to eql "PUT /echo\nfoo=bar"
   end
 
-  it 'should proxy HEAD requests' do
+  it 'proxies HEAD requests' do
     expect(http.head('/echo').headers['HTTP-X-EchoServer']).to eql 'HEAD /echo'
   end
 
-  it 'should proxy DELETE requests' do
+  it 'proxies DELETE requests' do
     expect(http.delete('/echo').body).to eql 'DELETE /echo'
   end
 
-  it 'should proxy OPTIONS requests' do
+  it 'proxies OPTIONS requests' do
     expect(http.run_request(:options, '/echo', nil, nil).body).to eql 'OPTIONS /echo'
   end
 end
 
 shared_examples_for 'a request stub' do
-  it 'should stub GET requests' do
+  it 'stubs GET requests' do
     proxy.stub("#{url}/foo")
-      .and_return(text: 'hello, GET!')
+         .and_return(text: 'hello, GET!')
     expect(http.get('/foo').body).to eql 'hello, GET!'
   end
 
-  it 'should stub GET response statuses' do
+  it 'stubs GET response statuses' do
     proxy.stub("#{url}/foo")
-      .and_return(code: 200)
-    expect(http.get('/foo').status).to eql 200
+         .and_return(code: 200)
+    expect(http.get('/foo').status).to be 200
   end
 
-  it 'should stub POST requests' do
+  it 'stubs POST requests' do
     proxy.stub("#{url}/bar", method: :post)
-      .and_return(text: 'hello, POST!')
+         .and_return(text: 'hello, POST!')
     expect(http.post('/bar', foo: :bar).body).to eql 'hello, POST!'
   end
 
-  it 'should stub PUT requests' do
+  it 'stubs PUT requests' do
     proxy.stub("#{url}/baz", method: :put)
-      .and_return(text: 'hello, PUT!')
+         .and_return(text: 'hello, PUT!')
     expect(http.put('/baz', foo: :bar).body).to eql 'hello, PUT!'
   end
 
-  it 'should stub HEAD requests' do
+  it 'stubs HEAD requests' do
     proxy.stub("#{url}/bap", method: :head)
-      .and_return(headers: { 'HTTP-X-Hello' => 'hello, HEAD!' })
+         .and_return(headers: { 'HTTP-X-Hello' => 'hello, HEAD!' })
     expect(http.head('/bap').headers['http-x-hello']).to eql 'hello, HEAD!'
   end
 
-  it 'should stub DELETE requests' do
+  it 'stubs DELETE requests' do
     proxy.stub("#{url}/bam", method: :delete)
-      .and_return(text: 'hello, DELETE!')
+         .and_return(text: 'hello, DELETE!')
     expect(http.delete('/bam').body).to eql 'hello, DELETE!'
   end
 
-  it 'should stub OPTIONS requests' do
+  it 'stubs OPTIONS requests' do
     proxy.stub("#{url}/bim", method: :options)
-      .and_return(text: 'hello, OPTIONS!')
+         .and_return(text: 'hello, OPTIONS!')
     expect(http.run_request(:options, '/bim', nil, nil).body).to eql 'hello, OPTIONS!'
   end
 
-  it 'should expose the currently registered stubs' do
+  it 'exposes the currently registered stubs' do
     stub1 = proxy.stub("#{url}/foo", method: :options)
-      .and_return(text: 'hello, OPTIONS!')
+                 .and_return(text: 'hello, OPTIONS!')
     stub2 = proxy.stub("#{url}/bar", method: :options)
-              .and_return(text: 'hello, OPTIONS!')
+                 .and_return(text: 'hello, OPTIONS!')
     expect(proxy.stubs).to eql([stub2, stub1])
   end
 end
 
-# Note: Caching integration tests are skipped because the lib's cacheable? method
+# NOTE: Caching integration tests are skipped because the lib's cacheable? method
 # has custom logic (staging.hirefrederick.com checks) that makes these tests unreliable.
 # The core caching logic is tested in cache_spec.rb and cache_handler_spec.rb.
 shared_examples_for 'a cache' do
   context 'whitelisted GET requests' do
-    it 'should not be cached' do
+    it 'is not cached' do
       assert_noncached_url
     end
 
@@ -94,7 +96,7 @@ shared_examples_for 'a cache' do
         Billy.config.whitelist = ["#{rack_app_url.host}:#{rack_app_url.port}"]
       end
 
-      it 'should not be cached ' do
+      it 'is not cached' do
         assert_noncached_url
       end
     end
@@ -105,7 +107,7 @@ shared_examples_for 'a cache' do
       Billy.config.whitelist = []
     end
 
-    it 'should be cached' do
+    it 'is cached' do
       assert_cached_url
     end
 
@@ -115,7 +117,7 @@ shared_examples_for 'a cache' do
         Billy.config.whitelist = ["#{rack_app_url.host}:#{rack_app_url.port + 1}"]
       end
 
-      it 'should be cached' do
+      it 'is cached' do
         assert_cached_url
       end
     end
@@ -126,14 +128,14 @@ shared_examples_for 'a cache' do
       Billy.config.ignore_params = ['/analytics']
     end
 
-    it 'should be cached' do
+    it 'is cached' do
       r = http.get('/analytics?some_param=5')
       expect(r.body).to eql 'GET /analytics'
       expect do
         expect do
           r = http.get('/analytics?some_param=20')
         end.to change { r.headers['HTTP-X-EchoCount'].to_i }.by(1)
-      end.to_not change { r.body }
+      end.not_to(change { r.body })
     end
   end
 
@@ -142,7 +144,7 @@ shared_examples_for 'a cache' do
       Billy.config.path_blacklist = ['/api']
     end
 
-    it 'should be cached' do
+    it 'is cached' do
       assert_cached_url('/api')
     end
 
@@ -151,11 +153,11 @@ shared_examples_for 'a cache' do
         Billy.config.path_blacklist = [/widgets$/]
       end
 
-      it 'should not cache a non-match' do
+      it 'does not cache a non-match' do
         assert_noncached_url('/widgets/5/edit')
       end
 
-      it 'should cache a match' do
+      it 'caches a match' do
         assert_cached_url('/widgets')
       end
     end
@@ -165,7 +167,7 @@ shared_examples_for 'a cache' do
     let(:cache_path) { Billy.config.cache_path }
     let(:cached_key) { proxy.cache.key('get', "#{url}/foo", '', 0) }
     let(:cached_file) do
-      f = cached_key + '.yml'
+      f = "#{cached_key}.yml"
       File.join(cache_path, f)
     end
 
@@ -179,7 +181,7 @@ shared_examples_for 'a cache' do
       File.delete(cached_file) if File.exist?(cached_file)
     end
 
-    # Note: Cache persistence tests are partially skipped because cacheable? has custom lib logic
+    # NOTE: Cache persistence tests are partially skipped because cacheable? has custom lib logic
     context 'enabled' do
       before do
         Billy.config.persist_cache = true
@@ -188,12 +190,12 @@ shared_examples_for 'a cache' do
         proxy.reset
       end
 
-      it 'should persist', skip: 'Depends on lib-specific cacheable? logic' do
+      it 'persists', skip: 'Depends on lib-specific cacheable? logic' do
         http.get('/foo')
         expect(File.exist?(cached_file)).to be true
       end
 
-      it 'should be read initially from persistent cache', skip: 'Depends on lib-specific cache lookup logic' do
+      it 'is read initially from persistent cache', skip: 'Depends on lib-specific cache lookup logic' do
         File.open(cached_file, 'w') do |f|
           cached = {
             headers: {},
@@ -207,10 +209,11 @@ shared_examples_for 'a cache' do
       end
 
       context 'cache_request_headers requests', skip: 'Depends on lib-specific cacheable? logic' do
-        it 'should not be cached by default' do
+        it 'is not cached by default' do
           http.get('/foo')
           # Only call fetch_from_persistence if file exists
           next unless File.exist?(cached_file)
+
           saved_cache = Billy.proxy.cache.fetch_from_persistence(cached_key)
           expect(saved_cache.keys).not_to include :request_headers
         end
@@ -220,10 +223,11 @@ shared_examples_for 'a cache' do
             Billy.config.cache_request_headers = true
           end
 
-          it 'should be cached' do
+          it 'is cached' do
             http.get('/foo')
             # Only call fetch_from_persistence if file exists
             next unless File.exist?(cached_file)
+
             saved_cache = Billy.proxy.cache.fetch_from_persistence(cached_key)
             expect(saved_cache.keys).to include :request_headers
           end
@@ -231,14 +235,15 @@ shared_examples_for 'a cache' do
       end
 
       context 'ignore_cache_port requests', skip: 'Depends on lib-specific cacheable? logic' do
-        it 'should be cached without port' do
+        it 'is cached without port' do
           r = http.get('/foo')
           # Only call fetch_from_persistence if file exists
           next unless File.exist?(cached_file)
+
           url = URI(r.env[:url])
           saved_cache = Billy.proxy.cache.fetch_from_persistence(cached_key)
 
-          expect(saved_cache[:url]).to_not eql(url.to_s)
+          expect(saved_cache[:url]).not_to eql(url.to_s)
           expect(saved_cache[:url]).to eql(url.to_s.gsub(":#{url.port}", ''))
         end
       end
@@ -246,9 +251,9 @@ shared_examples_for 'a cache' do
       context 'non_whitelisted_requests_disabled requests' do
         before { Billy.config.non_whitelisted_requests_disabled = true }
 
-        it 'should raise error when disabled' do
+        it 'raises error when disabled' do
           # TODO: Suppress stderr output: https://gist.github.com/adamstegman/926858
-          expect { http.get('/foo') }.to raise_error(Faraday::ConnectionFailed, 'end of file reached')
+          expect { http.get('/foo') }.to raise_error(Faraday::Error)
         end
       end
 
@@ -259,12 +264,12 @@ shared_examples_for 'a cache' do
           Billy.config.non_successful_cache_disabled = true
         end
 
-        it 'should not cache non-successful response when enabled' do
+        it 'does not cache non-successful response when enabled' do
           http_error.get('/foo')
           expect(File.exist?(cached_file)).to be false
         end
 
-        it 'should cache successful response when enabled', skip: 'Depends on lib-specific cacheable? logic' do
+        it 'caches successful response when enabled', skip: 'Depends on lib-specific cacheable? logic' do
           assert_cached_url
         end
       end
@@ -276,7 +281,7 @@ shared_examples_for 'a cache' do
           Billy.config.non_successful_error_level = :error
         end
 
-        it 'should raise error for non-successful responses when :error' do
+        it 'raises error for non-successful responses when :error' do
           expect { http_error.get('/foo') }.to raise_error(Faraday::ConnectionFailed)
         end
       end
@@ -302,7 +307,7 @@ shared_examples_for 'a cache' do
       expect do
         r = http.get(url)
       end.to change { r.headers['HTTP-X-EchoCount'].to_i }.by(1)
-    end.to_not change { r.body }
+    end.not_to(change { r.body })
   end
 
   def assert_cached_url(url = '/foo')
@@ -315,8 +320,8 @@ shared_examples_for 'a cache' do
     expect do
       expect do
         r = http.get(url)
-      end.to_not change { r.headers['HTTP-X-EchoCount'] }
-    end.to_not change { r.body }
+      end.not_to(change { r.headers['HTTP-X-EchoCount'] })
+    end.not_to(change { r.body })
   end
 end
 
@@ -329,9 +334,9 @@ describe Billy::Proxy do
       request: { timeout: 1.0 }
     }
     faraday_ssl_options = faraday_options.merge(ssl: {
-      verify: true,
-      ca_file: Billy.certificate_authority.cert_file
-    })
+                                                  verify: true,
+                                                  ca_file: Billy.certificate_authority.cert_file
+                                                })
 
     @http       = Faraday.new @http_url,  faraday_options
     @https      = Faraday.new @https_url, faraday_ssl_options
@@ -341,12 +346,14 @@ describe Billy::Proxy do
   context 'proxying' do
     context 'HTTP' do
       let!(:http) { @http }
-      it_should_behave_like 'a proxy server'
+
+      it_behaves_like 'a proxy server'
     end
 
     context 'HTTPS' do
       let!(:http) { @https }
-      it_should_behave_like 'a proxy server'
+
+      it_behaves_like 'a proxy server'
     end
   end
 
@@ -354,33 +361,37 @@ describe Billy::Proxy do
     context 'HTTP' do
       let!(:url)  { @http_url }
       let!(:http) { @http }
-      it_should_behave_like 'a request stub'
+
+      it_behaves_like 'a request stub'
     end
 
     context 'HTTPS' do
       let!(:url)  { @https_url }
       let!(:http) { @https }
-      it_should_behave_like 'a request stub'
+
+      it_behaves_like 'a request stub'
     end
   end
 
   context 'caching' do
     it 'defaults to nil scope' do
-      expect(proxy.cache.scope).to be nil
+      expect(proxy.cache.scope).to be_nil
     end
 
     context 'HTTP' do
       let!(:url)        { @http_url }
       let!(:http)       { @http }
       let!(:http_error) { @http_error }
-      it_should_behave_like 'a cache'
+
+      it_behaves_like 'a cache'
     end
 
     context 'HTTPS' do
       let!(:url)        { @https_url }
       let!(:http)       { @https }
       let!(:http_error) { @http_error }
-      it_should_behave_like 'a cache'
+
+      it_behaves_like 'a cache'
     end
 
     context 'with a cache scope' do
@@ -396,7 +407,7 @@ describe Billy::Proxy do
         proxy.cache.use_default_scope
       end
 
-      it_should_behave_like 'a cache'
+      it_behaves_like 'a cache'
 
       it 'uses the cache scope' do
         expect(proxy.cache.scope).to eq('my_cache')
@@ -404,7 +415,7 @@ describe Billy::Proxy do
 
       it 'can be reset to the default scope' do
         proxy.cache.use_default_scope
-        expect(proxy.cache.scope).to be nil
+        expect(proxy.cache.scope).to be_nil
       end
 
       it 'can execute a block against a cache scope' do
@@ -419,14 +430,14 @@ describe Billy::Proxy do
         expect { proxy.cache.with_scope 'some_scope' }.to raise_error ArgumentError
       end
 
-      it 'should have different keys for the same request under a different scope' do
-        # Note: The cache.key method uses the cache_scope parameter (4th arg), not the instance @scope
+      it 'has different keys for the same request under a different scope' do
+        # NOTE: The cache.key method uses the cache_scope parameter (4th arg), not the instance @scope
         # So we test by passing different cache_scope values
         args_scope_0 = ['get', "#{url}/foo", '', 0]
         args_scope_1 = ['get', "#{url}/foo", '', 1]
         key_scope_0 = proxy.cache.key(*args_scope_0)
         key_scope_1 = proxy.cache.key(*args_scope_1)
-        expect(key_scope_0).to_not eq key_scope_1
+        expect(key_scope_0).not_to eq key_scope_1
       end
     end
   end

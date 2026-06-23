@@ -1,86 +1,88 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Billy::ProxyRequestStub do
-  context '#matches?' do
-    it 'should match urls and methods' do
-      expect(Billy::ProxyRequestStub.new('http://example.com')
+  describe '#matches?' do
+    it 'matches urls and methods' do
+      expect(described_class.new('http://example.com')
         .matches?('GET', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new('http://example.com')
-        .matches?('POST', 'http://example.com')).to_not be
+      expect(described_class.new('http://example.com')
+        .matches?('POST', 'http://example.com')).not_to be
 
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :get)
+      expect(described_class.new('http://example.com', method: :get)
         .matches?('GET', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :post)
-        .matches?('GET', 'http://example.com')).to_not be
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :options)
-        .matches?('GET', 'http://example.com')).to_not be
+      expect(described_class.new('http://example.com', method: :post)
+        .matches?('GET', 'http://example.com')).not_to be
+      expect(described_class.new('http://example.com', method: :options)
+        .matches?('GET', 'http://example.com')).not_to be
 
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :post)
+      expect(described_class.new('http://example.com', method: :post)
         .matches?('POST', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new('http://fooxample.com', method: :post)
-        .matches?('POST', 'http://example.com')).to_not be
-        expect(Billy::ProxyRequestStub.new('http://fooxample.com', method: :options)
-          .matches?('POST', 'http://example.com')).to_not be
+      expect(described_class.new('http://fooxample.com', method: :post)
+        .matches?('POST', 'http://example.com')).not_to be
+      expect(described_class.new('http://fooxample.com', method: :options)
+        .matches?('POST', 'http://example.com')).not_to be
 
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :options)
+      expect(described_class.new('http://example.com', method: :options)
         .matches?('OPTIONS', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :options)
-        .matches?('OPTIONS', 'http://zzzzzexample.com')).to_not be
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :post)
-        .matches?('OPTIONS', 'http://example.com')).to_not be
+      expect(described_class.new('http://example.com', method: :options)
+        .matches?('OPTIONS', 'http://zzzzzexample.com')).not_to be
+      expect(described_class.new('http://example.com', method: :post)
+        .matches?('OPTIONS', 'http://example.com')).not_to be
     end
 
-    it 'should match regexps' do
-      expect(Billy::ProxyRequestStub.new(/http:\/\/.+\.com/, method: :post)
+    it 'matches regexps' do
+      expect(described_class.new(%r{http://.+\.com}, method: :post)
         .matches?('POST', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new(/http:\/\/.+\.co\.uk/, method: :get)
-        .matches?('GET', 'http://example.com')).to_not be
+      expect(described_class.new(%r{http://.+\.co\.uk}, method: :get)
+        .matches?('GET', 'http://example.com')).not_to be
     end
 
-    it 'should match up to but not including query strings' do
-      stub = Billy::ProxyRequestStub.new('http://example.com/foo/bar/')
-      expect(stub.matches?('GET', 'http://example.com/foo/')).to_not be
+    it 'matches up to but not including query strings' do
+      stub = described_class.new('http://example.com/foo/bar/')
+      expect(stub.matches?('GET', 'http://example.com/foo/')).not_to be
       expect(stub.matches?('GET', 'http://example.com/foo/bar/')).to be
       expect(stub.matches?('GET', 'http://example.com/foo/bar/?baz=bap')).to be
     end
 
-    it 'should match all methods' do
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :all)
+    it 'matches all methods' do
+      expect(described_class.new('http://example.com', method: :all)
         .matches?('GET', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :all)
+      expect(described_class.new('http://example.com', method: :all)
         .matches?('POST', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :all)
+      expect(described_class.new('http://example.com', method: :all)
         .matches?('OPTIONS', 'http://example.com')).to be
-      expect(Billy::ProxyRequestStub.new('http://example.com', method: :all)
+      expect(described_class.new('http://example.com', method: :all)
         .matches?('HEAD', 'http://example.com')).to be
     end
   end
 
-  context "#matches? (with strip_query_params false in config)" do
+  describe '#matches? (with strip_query_params false in config)' do
     before do
       Billy.config.strip_query_params = false
     end
 
-    it 'should not match up to request with query strings' do
-      stub = Billy::ProxyRequestStub.new('http://example.com/foo/bar/')
-      expect(stub.matches?('GET', 'http://example.com/foo/')).to_not be
+    it 'does not match up to request with query strings' do
+      stub = described_class.new('http://example.com/foo/bar/')
+      expect(stub.matches?('GET', 'http://example.com/foo/')).not_to be
       expect(stub.matches?('GET', 'http://example.com/foo/bar/')).to be
-      expect(stub.matches?('GET', 'http://example.com/foo/bar/?baz=bap')).to_not be
+      expect(stub.matches?('GET', 'http://example.com/foo/bar/?baz=bap')).not_to be
     end
   end
 
-  context '#call (without #and_return)' do
-    let(:subject) { Billy::ProxyRequestStub.new('url') }
+  describe '#call (without #and_return)' do
+    let(:subject) { described_class.new('url') }
 
     it 'returns a 204 empty response' do
       expect(subject.call('', '', {}, {}, nil)).to eql [204, { 'Content-Type' => 'text/plain' }, '']
     end
   end
 
-  context '#and_return + #call' do
-    let(:subject) { Billy::ProxyRequestStub.new('url') }
+  describe '#and_return + #call' do
+    let(:subject) { described_class.new('url') }
 
-    it 'should generate bare responses' do
+    it 'generates bare responses' do
       subject.and_return body: 'baz foo bar'
       expect(subject.call('', '', {}, {}, nil)).to eql [
         200,
@@ -89,7 +91,7 @@ describe Billy::ProxyRequestStub do
       ]
     end
 
-    it 'should generate text responses' do
+    it 'generates text responses' do
       subject.and_return text: 'foo bar baz'
       expect(subject.call('', '', {}, {}, nil)).to eql [
         200,
@@ -98,7 +100,7 @@ describe Billy::ProxyRequestStub do
       ]
     end
 
-    it 'should generate JSON responses' do
+    it 'generates JSON responses' do
       subject.and_return json: { foo: 'bar' }
       expect(subject.call('', '', {}, {}, nil)).to eql [
         200,
@@ -108,7 +110,7 @@ describe Billy::ProxyRequestStub do
     end
 
     context 'JSONP' do
-      it 'should generate JSONP responses' do
+      it 'generates JSONP responses' do
         subject.and_return jsonp: { foo: 'bar' }
         expect(subject.call('', '', { 'callback' => ['baz'] }, {}, nil)).to eql [
           200,
@@ -117,7 +119,7 @@ describe Billy::ProxyRequestStub do
         ]
       end
 
-      it 'should generate JSONP responses with custom callback parameter' do
+      it 'generates JSONP responses with custom callback parameter' do
         subject.and_return jsonp: { foo: 'bar' }, callback_param: 'cb'
         expect(subject.call('', '', { 'cb' => ['bap'] }, {}, nil)).to eql [
           200,
@@ -126,7 +128,7 @@ describe Billy::ProxyRequestStub do
         ]
       end
 
-      it 'should generate JSONP responses with custom callback name' do
+      it 'generates JSONP responses with custom callback name' do
         subject.and_return jsonp: { foo: 'bar' }, callback: 'cb'
         expect(subject.call('', '', {}, {}, nil)).to eql [
           200,
@@ -136,7 +138,7 @@ describe Billy::ProxyRequestStub do
       end
     end
 
-    it 'should generate redirection responses' do
+    it 'generates redirection responses' do
       subject.and_return redirect_to: 'http://example.com'
       expect(subject.call('', '', {}, {}, nil)).to eql [
         302,
@@ -145,7 +147,7 @@ describe Billy::ProxyRequestStub do
       ]
     end
 
-    it 'should set headers' do
+    it 'sets headers' do
       subject.and_return text: 'foo', headers: { 'HTTP-X-Foo' => 'bar' }
       expect(subject.call('', '', {}, {}, nil)).to eql [
         200,
@@ -154,7 +156,7 @@ describe Billy::ProxyRequestStub do
       ]
     end
 
-    it 'should set status codes' do
+    it 'sets status codes' do
       subject.and_return text: 'baz', code: 410
       expect(subject.call('', '', {}, {}, nil)).to eql [
         410,
@@ -163,7 +165,7 @@ describe Billy::ProxyRequestStub do
       ]
     end
 
-    it 'should use a callable' do
+    it 'uses a callable' do
       expected_params = { 'param1' => ['one'], 'param2' => ['two'] }
       expected_headers = { 'header1' => 'three', 'header2' => 'four' }
       expected_body = 'body text'
@@ -183,7 +185,7 @@ describe Billy::ProxyRequestStub do
       ]
     end
 
-    it 'should use a callable with Billy.pass_request' do
+    it 'uses a callable with Billy.pass_request' do
       # Stub the proxy handler to avoid ArgumentError from cache_scope mismatch
       allow(Billy.proxy.request_handler.handlers[:proxy]).to receive(:handle_request).and_return(
         status: 200,
@@ -211,19 +213,19 @@ describe Billy::ProxyRequestStub do
     end
   end
 
-  context '#stub_requests' do
-    let(:subject) { Billy::ProxyRequestStub.new('url') }
+  describe '#stub_requests' do
+    let(:subject) { described_class.new('url') }
 
-    before :each do
+    before do
       Billy.config.record_stub_requests = true
     end
 
-    it 'should record requests' do
+    it 'records requests' do
       subject.call('', '', {}, {}, nil)
       expect(subject.has_requests?).to be true
     end
 
-    it 'should record multiple requests' do
+    it 'records multiple requests' do
       expected_amount = 3
       expected_amount.times do
         subject.call('', '', {}, {}, nil)
@@ -232,7 +234,7 @@ describe Billy::ProxyRequestStub do
       expect(subject.requests.length).to eql expected_amount
     end
 
-    it 'should set a request' do
+    it 'sets a request' do
       expected_request = {
         method: 'POST',
         url: 'test-url',

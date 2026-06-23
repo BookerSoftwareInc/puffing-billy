@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Billy
   class RequestLog
     attr_reader :requests
@@ -12,7 +14,7 @@ module Billy
 
     def record(method, url, headers, body, cache_scope)
       Billy.log(:info, "puffing-billy: REQUEST LOG: #{method} #{url}")
-      purl = url.match(/.*staging\.hirefrederick.com\:443(.*)/)
+      purl = url.match(/.*staging\.hirefrederick.com:443(.*)/)
       puts "REQUEST LOG: #{cache_scope} #{method} #{purl.captures[0]}" if purl
       return unless Billy.config.record_requests
 

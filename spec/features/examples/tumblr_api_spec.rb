@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.shared_examples 'tumblr/expectations' do
-  it 'should show news stories' do
+  it 'shows news stories' do
     visit '/tumblr_api.html'
     expect(page).to have_link('News Item 1', href: 'http://example.com/news/1')
     expect(page).to have_content('News item 1 content here')
@@ -10,7 +12,7 @@ RSpec.shared_examples 'tumblr/expectations' do
   end
 end
 
-describe 'Tumblr API example', type: :feature, js: true do
+describe 'Tumblr API example', :js, type: :feature do
   context 'without scope external references' do
     before do
       proxy.stub('http://blog.howmanyleft.co.uk/api/read/json').and_return(
@@ -27,7 +29,8 @@ describe 'Tumblr API example', type: :feature, js: true do
               'regular-body' => 'News item 2 content here'
             }
           ]
-        })
+        }
+      )
     end
 
     include_examples 'tumblr/expectations'
