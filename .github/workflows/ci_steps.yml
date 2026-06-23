@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['3.3']
+        ruby: ['3.3.10']
 
     env:
       LANG: C.UTF-8

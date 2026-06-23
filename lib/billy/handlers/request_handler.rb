@@ -30,7 +30,7 @@ module Billy
       end
 
       body_msg = Billy.config.cache_request_body_methods.include?(method) ? " with body '#{body}'" : ''
-      request_log.complete(request, :error)
+      request_log.complete(request, :error, nil)
       { error: "Connection to #{url}#{body_msg} not cached and new http connections are disabled" }
     rescue StandardError => e
       { error: e.message }

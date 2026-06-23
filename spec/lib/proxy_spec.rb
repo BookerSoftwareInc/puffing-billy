@@ -13,7 +13,7 @@ shared_examples_for 'a proxy server' do
   end
 
   it 'proxies PUT requests' do
-    expect(http.post('/echo', foo: 'bar').body).to eql "POST /echo\nfoo=bar"
+    expect(http.put('/echo', foo: 'bar').body).to eql "PUT /echo\nfoo=bar"
   end
 
   it 'proxies HEAD requests' do
