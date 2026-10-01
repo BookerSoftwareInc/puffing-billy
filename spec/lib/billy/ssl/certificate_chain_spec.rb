@@ -1,23 +1,25 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Billy::CertificateChain do
   let(:cert1) { Billy::Certificate.new('localhost') }
   let(:cert2) { Billy::Certificate.new('localhost.localdomain') }
   let(:chain) do
-    Billy::CertificateChain.new('localhost', cert1.cert, cert2.cert)
+    described_class.new('localhost', cert1.cert, cert2.cert)
   end
 
-  context('#initialize') do
+  describe('#initialize') do
     it 'holds all certificates in order' do
-      expect(chain.certificates).to be_eql([cert1.cert, cert2.cert])
+      expect(chain.certificates).to eql([cert1.cert, cert2.cert])
     end
 
     it 'holds the domain' do
-      expect(chain.domain).to be_eql('localhost')
+      expect(chain.domain).to eql('localhost')
     end
   end
 
-  context('#file') do
+  describe('#file') do
     it 'pass back the path' do
       expect(chain.file).to match(/chain-localhost.pem/)
     end
@@ -33,7 +35,7 @@ describe Billy::CertificateChain do
     end
 
     it 'creates a PEM formatted certificate chain' do
-      expect(File.read(chain.file)).to match(/^[A-Za-z0-9\-\+\/\=]+$/)
+      expect(File.read(chain.file)).to match(%r{^[A-Za-z0-9\-+/=]+$})
     end
   end
 end

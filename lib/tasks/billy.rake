@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'addressable/uri'
 
 namespace :cache do
@@ -12,8 +14,9 @@ namespace :cache do
 
   desc 'Print out specific cache file information'
   task :print_details, :sha do |_t, args|
-    fail "Missing sha; usage: rake cache:print_details['<sha>']" unless args[:sha]
-    cache_array = load_cache(Billy.config.cache_path, '*' + args[:sha] + '*.yml')
+    raise "Missing sha; usage: rake cache:print_details['<sha>']" unless args[:sha]
+
+    cache_array = load_cache(Billy.config.cache_path, "*#{args[:sha]}*.yml")
 
     sort_cache(cache_array).each do |cache|
       print_cache_details(cache)
@@ -22,7 +25,8 @@ namespace :cache do
 
   desc 'Find specific cache files by URL'
   task :find_by_url, :api_path do |_t, args|
-    fail "Missing api path; usage: rake cache:find_by_url['<api_path>']" unless args[:api_path]
+    raise "Missing api path; usage: rake cache:find_by_url['<api_path>']" unless args[:api_path]
+
     cache_array = load_cache
     filtered_cache_array = cache_array.select { |f| f[:url_path].include?(args[:api_path]) }
 
@@ -33,9 +37,10 @@ namespace :cache do
 
   desc 'Find specific cache files by scope'
   task :find_by_scope, :scope do |_t, args|
-    fail "Missing scope; usage: rake cache:find_by_scope['<scope>']" unless args[:scope]
+    raise "Missing scope; usage: rake cache:find_by_scope['<scope>']" unless args[:scope]
+
     cache_array = load_cache
-    filtered_cache_array = cache_array.select { |f| f[:scope] && f[:scope].include?(args[:scope]) }
+    filtered_cache_array = cache_array.select { |f| f[:scope]&.include?(args[:scope]) }
 
     sort_cache(filtered_cache_array).each do |cache|
       print_cache_details(cache)
@@ -45,7 +50,7 @@ namespace :cache do
   desc 'Find cache files with non-successful status codes'
   task :find_non_successful do
     cache_array = load_cache
-    filtered_cache_array = cache_array.select { |f| !(200..299).include?(f[:status]) }
+    filtered_cache_array = cache_array.reject { |f| (200..299).include?(f[:status]) }
 
     sort_cache(filtered_cache_array).each do |cache|
       print_cache_details(cache)
@@ -59,8 +64,8 @@ namespace :cache do
     Dir.glob(cache_path + file_pattern) do |filename|
       data = load_cache_file(filename)
       url = Addressable::URI.parse(data[:url])
-      data[:url_path] = "#{url.path}#{url.query ? '?' + url.query : ''}#{url.fragment ? '#' + url.fragment : ''}"
-      data[:filename] = filename.gsub(Rails.root.to_s + '/', '')
+      data[:url_path] = "#{url.path}#{url.query ? "?#{url.query}" : ''}#{url.fragment ? "##{url.fragment}" : ''}"
+      data[:filename] = filename.gsub("#{Rails.root}/", '')
       cache_array << data
     end
     cache_array

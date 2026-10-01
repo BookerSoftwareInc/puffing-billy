@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'billy/version'
 require 'billy/config'
 require 'billy/handlers/handler'
@@ -18,11 +20,11 @@ require 'billy/railtie' if defined?(Rails)
 
 module Billy
   def self.proxy
-    @billy_proxy ||= (
+    @proxy ||= begin
       proxy = Billy::Proxy.new
       proxy.start
       proxy
-    )
+    end
   end
 
   def self.certificate_authority
@@ -33,13 +35,13 @@ module Billy
   # the request beforehand and/or modify the actual response which is passed
   # back by this method. But you can also implement a custom proxy passing
   # method if you like to. This is just a shortcut.
-  def self.pass_request(params, headers, body, url, method)
-      handler = proxy.request_handler.handlers[:proxy]
-      response = handler.handle_request(method, url, headers, body)
-      {
-        code: response[:status],
-        body: response[:content],
-        headers: response[:headers]
-      }
+  def self.pass_request(_params, headers, body, url, method)
+    handler = proxy.request_handler.handlers[:proxy]
+    response = handler.handle_request(method, url, headers, body)
+    {
+      code: response[:status],
+      body: response[:content],
+      headers: response[:headers]
+    }
   end
 end

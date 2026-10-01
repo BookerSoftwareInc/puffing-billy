@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Billy
   module RspecHelper
     def proxy

@@ -1,16 +1,18 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Billy::Certificate do
-  let(:cert1) { Billy::Certificate.new('localhost') }
-  let(:cert2) { Billy::Certificate.new('localhost.localdomain') }
+  let(:cert1) { described_class.new('localhost') }
+  let(:cert2) { described_class.new('localhost.localdomain') }
 
-  context('#domain') do
+  describe('#domain') do
     it 'holds the domain' do
-      expect(Billy::Certificate.new('test.tld').domain).to be_eql('test.tld')
+      expect(described_class.new('test.tld').domain).to eql('test.tld')
     end
   end
 
-  context('#key') do
+  describe('#key') do
     it 'generates a new key each time' do
       expect(cert1.key).not_to be(cert2.key)
     end
@@ -20,7 +22,7 @@ describe Billy::Certificate do
     end
   end
 
-  context('#cert') do
+  describe('#cert') do
     it 'generates a new certificate each time' do
       expect(cert1.cert).not_to be(cert2.cert)
     end
@@ -40,12 +42,12 @@ describe Billy::Certificate do
     end
 
     it 'configures the correct subject' do
-      expect(cert1.cert.subject.to_s).to be_eql('/CN=localhost')
+      expect(cert1.cert.subject.to_s).to eql('/CN=localhost')
     end
 
     it 'configures the subject alternative names' do
       expect(cert1.cert.extensions.first.to_s).to \
-        be_eql('subjectAltName = DNS:localhost')
+        eql('subjectAltName = DNS:localhost')
     end
 
     it 'configures SSLv3' do
@@ -54,7 +56,7 @@ describe Billy::Certificate do
     end
   end
 
-  context('#key_file') do
+  describe('#key_file') do
     it 'pass back the path' do
       expect(cert1.key_file).to match(/request-localhost.key$/)
     end
@@ -64,7 +66,7 @@ describe Billy::Certificate do
     end
 
     it 'creates a PEM formatted certificate' do
-      expect(File.read(cert1.key_file)).to match(/^[A-Za-z0-9\-\+\/\=]+$/)
+      expect(File.read(cert1.key_file)).to match(%r{^[A-Za-z0-9\-+/=]+$})
     end
 
     it 'writes out a private key' do
@@ -73,7 +75,7 @@ describe Billy::Certificate do
     end
   end
 
-  context('#cert_file') do
+  describe('#cert_file') do
     it 'pass back the path' do
       expect(cert1.cert_file).to match(/request-localhost.crt$/)
     end
@@ -83,7 +85,7 @@ describe Billy::Certificate do
     end
 
     it 'creates a PEM formatted certificate' do
-      expect(File.read(cert1.cert_file)).to match(/^[A-Za-z0-9\-\+\/\=]+$/)
+      expect(File.read(cert1.cert_file)).to match(%r{^[A-Za-z0-9\-+/=]+$})
     end
   end
 end

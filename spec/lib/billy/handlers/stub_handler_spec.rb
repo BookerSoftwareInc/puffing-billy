@@ -1,14 +1,16 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Billy::StubHandler do
-  let(:handler) { Billy::StubHandler.new }
+  let(:handler) { described_class.new }
   let(:request) do
     {
-      method:   'GET',
-      url:      'http://example.test:8080/index?some=param',
-      headers:  { 'Accept-Encoding'  => 'gzip',
-                  'Cache-Control'    => 'no-cache' },
-      body:     'Some body'
+      method: 'GET',
+      url: 'http://example.test:8080/index?some=param',
+      headers: { 'Accept-Encoding' => 'gzip',
+                 'Cache-Control' => 'no-cache' },
+      body: 'Some body'
     }
   end
   let(:cache_scope) { 0 }
@@ -28,7 +30,7 @@ describe Billy::StubHandler do
   describe '#handle_request' do
     it 'returns nil if the request is not stubbed' do
       expect(handler).to receive(:handles_request?).and_return(false)
-      expect(handler.handle_request(nil, nil, nil, nil, cache_scope)).to be nil
+      expect(handler.handle_request(nil, nil, nil, nil, cache_scope)).to be_nil
     end
 
     it 'returns a response hash if the request is stubbed' do

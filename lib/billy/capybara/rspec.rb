@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'capybara/rspec'
 require 'billy/browsers/capybara'
 require 'billy/init/rspec'

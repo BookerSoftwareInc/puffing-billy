@@ -1,12 +1,14 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Billy::RequestLog do
-  let(:request_log) { Billy::RequestLog.new }
+  let(:request_log) { described_class.new }
   let(:cache_scope) { 0 }
 
   describe '#record' do
     it 'returns the request details if record_requests is enabled' do
-      allow(Billy::config).to receive(:record_requests).and_return(true)
+      allow(Billy.config).to receive(:record_requests).and_return(true)
       expected_request = {
         scope: cache_scope,
         cache_key: nil,
@@ -21,14 +23,14 @@ describe Billy::RequestLog do
     end
 
     it 'returns nil if record_requests is disabled' do
-      allow(Billy::config).to receive(:record_requests).and_return(false)
+      allow(Billy.config).to receive(:record_requests).and_return(false)
       expect(request_log.record(:method, :url, :headers, :body, cache_scope)).to be_nil
     end
   end
 
   describe '#complete' do
     it 'marks the request as complete if record_requests is enabled' do
-      allow(Billy::config).to receive(:record_requests).and_return(true)
+      allow(Billy.config).to receive(:record_requests).and_return(true)
 
       request = request_log.record(:method, :url, :headers, :body, cache_scope)
       expected_request = {
@@ -45,7 +47,7 @@ describe Billy::RequestLog do
     end
 
     it 'marks the request as complete if record_requests is disabled' do
-      allow(Billy::config).to receive(:record_requests).and_return(false)
+      allow(Billy.config).to receive(:record_requests).and_return(false)
       expect(request_log.complete(nil, :handler, :cache_key)).to be_nil
     end
   end
@@ -56,7 +58,7 @@ describe Billy::RequestLog do
     end
 
     it 'returns the currently known requests' do
-      allow(Billy::config).to receive(:record_requests).and_return(true)
+      allow(Billy.config).to receive(:record_requests).and_return(true)
 
       request1 = request_log.record(:method, :url, :headers, :body, cache_scope)
       request2 = request_log.record(:method, :url, :headers, :body, cache_scope)
@@ -66,7 +68,7 @@ describe Billy::RequestLog do
 
   describe '#reset' do
     it 'resets known requests' do
-      allow(Billy::config).to receive(:record_requests).and_return(true)
+      allow(Billy.config).to receive(:record_requests).and_return(true)
 
       request1 = request_log.record(:method, :url, :headers, :body, cache_scope)
       request2 = request_log.record(:method, :url, :headers, :body, cache_scope)

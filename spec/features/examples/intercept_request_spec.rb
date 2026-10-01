@@ -1,12 +1,14 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'timeout'
 
-describe 'intercept request example', type: :feature, js: true do
+describe 'intercept request example', :js, type: :feature do
   before do
     Billy.config.record_stub_requests = true
   end
 
-  it 'should intercept a GET request directly' do
+  it 'intercepts a GET request directly' do
     stub = proxy.stub('http://example.com/').and_return(
       headers: { 'Access-Control-Allow-Origin' => '*' },
       code: 200
@@ -16,13 +18,13 @@ describe 'intercept request example', type: :feature, js: true do
     expect(stub.requests).not_to be_empty
   end
 
-  it 'should intercept a POST request through an intermediary page' do
+  it 'intercepts a POST request through an intermediary page' do
     stub = proxy.stub('http://example.com/', method: 'post').and_return(
       headers: { 'Access-Control-Allow-Origin' => '*' },
       code: 200
     )
     visit '/intercept_request.html'
-    Timeout::timeout(5) do
+    Timeout.timeout(5) do
       sleep(0.1) until stub.has_requests?
     end
     request = stub.requests.shift

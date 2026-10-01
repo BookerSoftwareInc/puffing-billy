@@ -1,12 +1,16 @@
+# frozen_string_literal: true
+
 require 'eventmachine'
 require 'thin'
 require 'faraday'
 
-module Thin::Backends
-  class TcpServer
-    def get_port
-      # seriously, eventmachine, how hard does getting a port have to be?
-      Socket.unpack_sockaddr_in(EM.get_sockname(@signature)).first
+module Thin
+  module Backends
+    class TcpServer
+      def get_port
+        # seriously, eventmachine, how hard does getting a port have to be?
+        Socket.unpack_sockaddr_in(EM.get_sockname(@signature)).first
+      end
     end
   end
 end
@@ -42,7 +46,7 @@ module Billy
 
     def echo_app_setup(response_code = 200)
       counter = 0
-      Proc.new do |env|
+      proc do |env|
         req_body = env['rack.input'].read
         request_info = "#{env['REQUEST_METHOD']} #{env['PATH_INFO']}"
         res_body = request_info
@@ -51,7 +55,7 @@ module Billy
         [
           response_code,
           { 'HTTP-X-EchoServer' => request_info,
-            'HTTP-X-EchoCount' => "#{counter}" },
+            'HTTP-X-EchoCount' => counter.to_s },
           [res_body]
         ]
       end
@@ -63,7 +67,6 @@ module Billy
       chain = Billy::CertificateChain.new(domain, cert.cert, ca)
       { private_key_file: cert.key_file,
         cert_chain_file: chain.file }
-
     end
 
     def start_server(echo, ssl = false)

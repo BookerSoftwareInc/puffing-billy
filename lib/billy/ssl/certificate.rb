@@ -1,4 +1,3 @@
-# encoding: utf-8
 # frozen_string_literal: true
 
 require 'openssl'
@@ -62,7 +61,7 @@ module Billy
       cert = OpenSSL::X509::Certificate.new
       configure(cert)
       add_extensions(cert)
-      cert.sign(Billy.certificate_authority.key, OpenSSL::Digest::SHA256.new)
+      cert.sign(Billy.certificate_authority.key, OpenSSL::Digest.new('SHA256'))
     end
 
     # Generate a new certificate signing request (CSR) which will be picked
@@ -71,7 +70,7 @@ module Billy
       req = OpenSSL::X509::Request.new
       req.public_key = key.public_key
       req.subject = OpenSSL::X509::Name.new([['CN', domain]])
-      req.sign(key, OpenSSL::Digest::SHA256.new)
+      req.sign(key, OpenSSL::Digest.new('SHA256'))
     end
 
     # Setup all relevant properties of the given certificate to produce

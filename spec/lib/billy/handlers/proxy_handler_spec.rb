@@ -1,14 +1,17 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Billy::ProxyHandler do
-  subject { Billy::ProxyHandler.new }
+  subject { described_class.new }
+
   let(:request) do
     {
-      method:   'post',
-      url:      'http://usern:pw@example.test:8080/index?some=param',
-      headers:  { 'Accept-Encoding'  => 'gzip',
-                  'Cache-Control'    => 'no-cache' },
-      body:     'Some body'
+      method: 'post',
+      url: 'http://usern:pw@example.test:8080/index?some=param',
+      headers: { 'Accept-Encoding' => 'gzip',
+                 'Cache-Control' => 'no-cache' },
+      body: 'Some body'
     }
   end
   let(:cache_scope) { 0 }
@@ -27,6 +30,7 @@ describe Billy::ProxyHandler do
                                         cache_scope)).to be true
       end
     end
+
     context 'with non-whitelisted requests disabled' do
       before do
         expect(Billy.config).to receive(:non_whitelisted_requests_disabled).and_return(true)
@@ -43,7 +47,7 @@ describe Billy::ProxyHandler do
       context 'a whitelisted host' do
         context 'with a blacklisted path' do
           before do
-            expect(Billy.config).to receive(:path_blacklist) { ['/index'] }
+            expect(Billy.config).to receive(:path_blacklist).and_return(['/index'])
           end
 
           it 'does not handle requests for blacklisted paths' do
@@ -57,7 +61,7 @@ describe Billy::ProxyHandler do
 
         context 'as a regex' do
           before do
-            expect(Billy.config).to receive(:whitelist) { [%r{example\.test\/a}] }
+            expect(Billy.config).to receive(:whitelist).and_return([%r{example\.test/a}])
           end
 
           it 'handles requests for the host without a port' do
@@ -79,7 +83,7 @@ describe Billy::ProxyHandler do
 
         context 'without a port' do
           before do
-            expect(Billy.config).to receive(:whitelist) { ['example.test'] }
+            expect(Billy.config).to receive(:whitelist).and_return(['example.test'])
           end
 
           it 'handles requests for the host without a port' do
@@ -101,7 +105,7 @@ describe Billy::ProxyHandler do
 
         context 'with a port' do
           before do
-            expect(Billy.config).to receive(:whitelist) { ['example.test:8080'] }
+            expect(Billy.config).to receive(:whitelist).and_return(['example.test:8080'])
           end
 
           it 'does not handle requests whitelisted for a specific port' do
@@ -131,7 +135,7 @@ describe Billy::ProxyHandler do
                                     request[:url],
                                     request[:headers],
                                     request[:body],
-                                    cache_scope)).to be nil
+                                    cache_scope)).to be_nil
     end
 
     context 'with a handled request' do
@@ -179,15 +183,13 @@ describe Billy::ProxyHandler do
                                       request[:url],
                                       request[:headers],
                                       request[:body],
-                                      cache_scope)).to be nil
+                                      cache_scope)).to be_nil
       end
 
       it 'caches the response if cacheable' do
         # cacheable? requires Billy.config.cache and refresh_persisted_cache to be true
-        allow(Billy.config).to receive(:cache).and_return(true)
-        allow(Billy.config).to receive(:refresh_persisted_cache).and_return(true)
-        allow(Billy.config).to receive(:whitelist).and_return([])
-        allow(Billy.config).to receive(:path_blacklist).and_return(['/index'])
+        allow(Billy.config).to receive_messages(cache: true, refresh_persisted_cache: true, whitelist: [],
+                                                path_blacklist: ['/index'])
         expect(Billy::Cache.instance).to receive(:store)
         subject.handle_request(request[:method],
                                request[:url],
@@ -197,13 +199,12 @@ describe Billy::ProxyHandler do
       end
 
       it 'uses the timeouts defined in configuration' do
-        allow(Billy.config).to receive(:proxied_request_inactivity_timeout).and_return(42)
-        allow(Billy.config).to receive(:proxied_request_connect_timeout).and_return(24)
+        allow(Billy.config).to receive_messages(proxied_request_inactivity_timeout: 42,
+                                                proxied_request_connect_timeout: 24)
 
         expect(EventMachine::HttpRequest).to receive(:new).with(request[:url],
-                                                                inactivity_timeout: 42,
-                                                                connect_timeout: 24
-        )
+                                                                { inactivity_timeout: 42,
+                                                                  connect_timeout: 24 })
 
         subject.handle_request(request[:method],
                                request[:url],
@@ -213,14 +214,12 @@ describe Billy::ProxyHandler do
       end
 
       it 'uses the internal proxy settings defined in configuration' do
-        allow(Billy.config).to receive(:proxied_request_host).and_return('10.10.10.10')
-        allow(Billy.config).to receive(:proxied_request_port).and_return('2080')
+        allow(Billy.config).to receive_messages(proxied_request_host: '10.10.10.10', proxied_request_port: '2080')
 
         expect(EventMachine::HttpRequest).to receive(:new).with(request[:url],
-                                                                inactivity_timeout: 10,
-                                                                connect_timeout: 5,
-                                                                proxy: { host: '10.10.10.10', port: '2080' }
-        )
+                                                                { inactivity_timeout: 10,
+                                                                  connect_timeout: 5,
+                                                                  proxy: { host: '10.10.10.10', port: '2080' } })
 
         subject.handle_request(request[:method],
                                request[:url],
@@ -234,15 +233,15 @@ describe Billy::ProxyHandler do
   describe '#build_request_options' do
     it 'creates authorization header when URL has basic auth' do
       request_options = subject.send(:build_request_options, request[:url],
-                                                             request[:headers],
-                                                             request[:body])
+                                     request[:headers],
+                                     request[:body])
       expect(request_options[:head]).to have_key 'authorization'
     end
 
     it 'does not include authorization header without basic auth' do
-      request_options = subject.send(:build_request_options, request[:url].gsub('usern:pw@',''),
-                                                             request[:headers],
-                                                             request[:body])
+      request_options = subject.send(:build_request_options, request[:url].gsub('usern:pw@', ''),
+                                     request[:headers],
+                                     request[:body])
       expect(request_options[:head]).not_to have_key 'authorization'
     end
   end

@@ -1,4 +1,6 @@
-Dir[File.expand_path('../support/**/*.rb', __FILE__)].each { |f| require f }
+# frozen_string_literal: true
+
+Dir[File.expand_path('support/**/*.rb', __dir__)].each { |f| require f }
 
 require 'pry'
 require 'billy/capybara/rspec'
@@ -7,26 +9,19 @@ require 'rack'
 require 'logger'
 require 'fileutils'
 
-# Patch RequestLog#complete to accept optional cache_key (lib bug: line 31 of request_handler.rb passes only 2 args)
-module Billy
-  class RequestLog
-    def complete(request, handler, cache_key = nil)
-      return unless Billy.config.record_requests
-
-      request.merge! status: :complete,
-                     handler: handler,
-                     cache_key: cache_key
-    end
-  end
-end
-
-browser = Billy::Browsers::Watir.new :phantomjs
-Capybara.app = Rack::Directory.new(File.expand_path('../../examples', __FILE__))
-Capybara.server = :webrick
-Capybara.javascript_driver = :poltergeist_billy
+chrome_options = Selenium::WebDriver::Chrome::Options.new
+chrome_options.add_argument('--headless=new')
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--disable-gpu')
+chrome_options.binary = ENV['CHROME_BIN'] if ENV['CHROME_BIN']
+browser = Billy::Browsers::Watir.new :chrome, options: chrome_options
+Capybara.app = Rack::Directory.new(File.expand_path('../examples', __dir__))
+Capybara.server = :puma, { Silent: true }
+Capybara.javascript_driver = :selenium_chrome_headless_billy
 
 Billy.configure do |config|
-  config.logger = Logger.new(File.expand_path('../../log/test.log', __FILE__))
+  config.logger = Logger.new(File.expand_path('../log/test.log', __dir__))
 end
 
 RSpec.configure do |config|
@@ -45,11 +40,11 @@ RSpec.configure do |config|
     @browser = browser
   end
 
-  config.before :each do
+  config.before do
     proxy.reset_cache
   end
 
-  config.after :each do
+  config.after do
     Billy.config.reset
   end
 

@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Billy::Authority do
-  let(:auth1) { Billy::Authority.new }
-  let(:auth2) { Billy::Authority.new }
+  let(:auth1) { described_class.new }
+  let(:auth2) { described_class.new }
 
-  context('#key') do
+  describe('#key') do
     it 'generates a new key each time' do
       expect(auth1.key).not_to be(auth2.key)
     end
@@ -14,7 +16,7 @@ describe Billy::Authority do
     end
   end
 
-  context('#cert') do
+  describe('#cert') do
     it 'generates a new certificate each time' do
       expect(auth1.cert).not_to be(auth2.cert)
     end
@@ -35,12 +37,12 @@ describe Billy::Authority do
 
     it 'configures the subject' do
       expect(auth1.cert.subject.to_s).to \
-        be_eql('/CN=Puffing Billy/O=Puffing Billy')
+        eql('/CN=Puffing Billy/O=Puffing Billy')
     end
 
     it 'configures the certificate authority constrain' do
       expect(auth1.cert.extensions.first.to_s).to \
-        be_eql('basicConstraints = critical, CA:TRUE')
+        eql('basicConstraints = critical, CA:TRUE')
     end
 
     it 'configures SSLv3' do
@@ -49,7 +51,7 @@ describe Billy::Authority do
     end
   end
 
-  context('#key_file') do
+  describe('#key_file') do
     it 'pass back the path' do
       expect(auth1.key_file).to match(/ca.key$/)
     end
@@ -59,7 +61,7 @@ describe Billy::Authority do
     end
 
     it 'creates a PEM formatted certificate' do
-      expect(File.read(auth1.key_file)).to match(/^[A-Za-z0-9\-\+\/\=]+$/)
+      expect(File.read(auth1.key_file)).to match(%r{^[A-Za-z0-9\-+/=]+$})
     end
 
     it 'writes out a private key' do
@@ -68,7 +70,7 @@ describe Billy::Authority do
     end
   end
 
-  context('#cert_file') do
+  describe('#cert_file') do
     it 'pass back the path' do
       expect(auth1.cert_file).to match(/ca.crt$/)
     end
@@ -78,7 +80,7 @@ describe Billy::Authority do
     end
 
     it 'creates a PEM formatted certificate' do
-      expect(File.read(auth1.cert_file)).to match(/^[A-Za-z0-9\-\+\/\=]+$/)
+      expect(File.read(auth1.cert_file)).to match(%r{^[A-Za-z0-9\-+/=]+$})
     end
   end
 end
