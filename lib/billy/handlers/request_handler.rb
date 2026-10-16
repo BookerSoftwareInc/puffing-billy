@@ -31,6 +31,13 @@ module Billy
       request_log.complete(request, :error)
       { error: "Connection to #{url}#{body_msg} not cached and new http connections are disabled" }
     rescue => error
+      # DIAGNOSTIC: the handler chain swallowed only error.message, which hides where
+      # Ruby 3.x arity errors (e.g. "wrong number of arguments (given 2, expected 3)")
+      # actually originate. Log the class, the triggering request, and the backtrace
+      # so the failing call site can be pinpointed. Behaviour is otherwise unchanged.
+      Billy.log(:error, "puffing-billy: handler error for #{method} #{url}: " \
+                        "#{error.class}: #{error.message}\n  " \
+                        "#{Array(error.backtrace).first(20).join("\n  ")}")
       { error: error.message }
     end
 
